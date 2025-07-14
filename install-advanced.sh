@@ -60,21 +60,35 @@ print_question() {
     echo -e "${CYAN}[QUESTION]${NC} $1"
 }
 
-# Function to check if running as root
-check_root() {
+# Function to check if running as root or with sudo
+check_privileges() {
     if [[ $EUID -eq 0 ]]; then
-        print_error "This script should not be run as root for security reasons."
-        print_error "Please run as a regular user with sudo privileges."
-        exit 1
+        print_status "Running as root - proceeding with full system privileges"
+        SUDO_CMD=""
+        RUNNING_AS_ROOT=true
+        # Set secure ownership for created files
+        DEFAULT_USER="www-data"
+        DEFAULT_GROUP="www-data"
+    else
+        print_status "Running as regular user - checking sudo privileges"
+        if ! sudo -n true 2>/dev/null; then
+            print_error "This script requires either root privileges or sudo access."
+            print_error "Please run as root or ensure you can run sudo commands."
+            exit 1
+        fi
+        SUDO_CMD="sudo"
+        RUNNING_AS_ROOT=false
+        DEFAULT_USER=$(whoami)
+        DEFAULT_GROUP=$(id -gn)
     fi
 }
 
-# Function to check sudo privileges
-check_sudo() {
-    if ! sudo -n true 2>/dev/null; then
-        print_error "This script requires sudo privileges."
-        print_error "Please ensure you can run sudo commands."
-        exit 1
+# Function to run commands with appropriate privileges
+run_privileged() {
+    if [[ $RUNNING_AS_ROOT == true ]]; then
+        "$@"
+    else
+        sudo "$@"
     fi
 }
 
@@ -189,13 +203,13 @@ detect_port_conflicts() {
     local alternatives=()
 
     # Check application port
-    if sudo netstat -tlnp 2>/dev/null | grep -q ":$DEFAULT_PORT "; then
-        local service=$(sudo netstat -tlnp 2>/dev/null | grep ":$DEFAULT_PORT " | awk '{print $7}' | cut -d'/' -f2)
+    if run_privileged netstat -tlnp 2>/dev/null | grep -q ":$DEFAULT_PORT "; then
+        local service=$(run_privileged netstat -tlnp 2>/dev/null | grep ":$DEFAULT_PORT " | awk '{print $7}' | cut -d'/' -f2)
         conflicts+=("Port $DEFAULT_PORT is used by: $service")
         
         # Find alternative port
         for port in {5001..5010}; do
-            if ! sudo netstat -tlnp 2>/dev/null | grep -q ":$port "; then
+            if ! run_privileged netstat -tlnp 2>/dev/null | grep -q ":$port "; then
                 alternatives+=("$port")
                 break
             fi
@@ -203,13 +217,13 @@ detect_port_conflicts() {
     fi
 
     # Check nginx ports
-    if [[ "$DEFAULT_NGINX_PORT" != "80" ]] && sudo netstat -tlnp 2>/dev/null | grep -q ":$DEFAULT_NGINX_PORT "; then
-        local service=$(sudo netstat -tlnp 2>/dev/null | grep ":$DEFAULT_NGINX_PORT " | awk '{print $7}' | cut -d'/' -f2)
+    if [[ "$DEFAULT_NGINX_PORT" != "80" ]] && run_privileged netstat -tlnp 2>/dev/null | grep -q ":$DEFAULT_NGINX_PORT "; then
+        local service=$(run_privileged netstat -tlnp 2>/dev/null | grep ":$DEFAULT_NGINX_PORT " | awk '{print $7}' | cut -d'/' -f2)
         conflicts+=("Port $DEFAULT_NGINX_PORT is used by: $service")
     fi
 
-    if [[ "$DEFAULT_SSL_PORT" != "443" ]] && sudo netstat -tlnp 2>/dev/null | grep -q ":$DEFAULT_SSL_PORT "; then
-        local service=$(sudo netstat -tlnp 2>/dev/null | grep ":$DEFAULT_SSL_PORT " | awk '{print $7}' | cut -d'/' -f2)
+    if [[ "$DEFAULT_SSL_PORT" != "443" ]] && run_privileged netstat -tlnp 2>/dev/null | grep -q ":$DEFAULT_SSL_PORT "; then
+        local service=$(run_privileged netstat -tlnp 2>/dev/null | grep ":$DEFAULT_SSL_PORT " | awk '{print $7}' | cut -d'/' -f2)
         conflicts+=("Port $DEFAULT_SSL_PORT is used by: $service")
     fi
 
@@ -332,9 +346,9 @@ renew_ssl_certificate() {
         install_certbot
     fi
     
-    if sudo certbot renew --cert-name "$DOMAIN_NAME" --quiet; then
+    if run_privileged certbot renew --cert-name "$DOMAIN_NAME" --quiet; then
         print_success "Certificate renewed successfully"
-        sudo systemctl reload nginx
+        run_privileged systemctl reload nginx
     else
         print_warning "Certificate renewal failed, attempting new certificate"
         generate_new_ssl_certificate
@@ -367,8 +381,8 @@ generate_new_ssl_certificate() {
 install_certbot() {
     print_header "Installing Certbot..."
     
-    sudo apt-get update
-    sudo apt-get install -y certbot python3-certbot-nginx
+    run_privileged apt-get update
+    run_privileged apt-get install -y certbot python3-certbot-nginx
     
     print_success "Certbot installed successfully"
 }
@@ -525,8 +539,8 @@ configure_alternative_ports() {
 install_dependencies() {
     print_header "Installing system dependencies..."
     
-    sudo apt-get update
-    sudo apt-get install -y \
+    run_privileged apt-get update
+    run_privileged apt-get install -y \
         python3 \
         python3-pip \
         python3-venv \
@@ -549,8 +563,14 @@ setup_application() {
     print_header "Setting up AI Ethics Testing Framework..."
     
     # Create application directory
-    sudo mkdir -p "$DOCUMENT_ROOT"
-    sudo chown -R "$USER:$USER" "$DOCUMENT_ROOT"
+    run_privileged mkdir -p "$DOCUMENT_ROOT"
+    
+    # Set proper ownership based on running mode
+    if [[ $RUNNING_AS_ROOT == true ]]; then
+        run_privileged chown -R "$DEFAULT_USER:$DEFAULT_GROUP" "$DOCUMENT_ROOT"
+    else
+        run_privileged chown -R "$USER:$USER" "$DOCUMENT_ROOT"
+    fi
     
     # Copy application files
     if [[ "$SCRIPT_DIR" != "$DOCUMENT_ROOT" ]]; then
@@ -892,8 +912,7 @@ EOF
     echo -e "${NC}"
     
     # Check prerequisites
-    check_root
-    check_sudo
+    check_privileges
     
     # Parse arguments
     parse_arguments "$@"
