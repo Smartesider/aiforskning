@@ -1,0 +1,29 @@
+# AI Ethics Testing Framework Requirements
+
+# Core web framework
+flask>=2.3.0
+flask-cors>=4.0.0
+gunicorn>=21.0.0
+
+# Database (SQLite is built into Python)
+
+# Production dependencies
+supervisor>=4.2.0
+
+# Required for full functionality
+requests>=2.31.0
+python-dateutil>=2.8.0
+
+# Optional dependencies for enhanced functionality
+# numpy>=1.24.0  # For advanced statistical analysis
+# pandas>=2.0.0  # For data manipulation
+# matplotlib>=3.7.0  # For additional plotting
+# seaborn>=0.12.0  # For statistical visualizations
+
+# Development dependencies (uncomment for development)
+# pytest>=7.0.0  # For testing
+# pylint>=2.17.0  # For code quality
+# black>=23.0.0  # For code formatting
+# black>=23.0.0  # For code formatting
+# pylint>=2.17.0  # For linting
+# requests>=2.31.0  # For API testing
