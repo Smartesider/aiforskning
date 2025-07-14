@@ -23,29 +23,37 @@ This framework presents AI models with 50 carefully crafted ethical dilemmas acr
 
 ## 🚀 Quick Start
 
-### Installation
+### 🌐 Production Deployment (Ubuntu Server)
+
+For production deployment with SSL, multi-server support, and intelligent conflict detection:
 
 ```bash
-git clone https://github.com/yourusername/aiforskning.git
+# Quick deployment for testsider.no with SSL
+curl -sSL https://raw.githubusercontent.com/Smartesider/aiforskning/main/quick-deploy.sh | bash -s -- --domain testsider.no --email admin@testsider.no
+
+# Or download and run locally
+wget https://raw.githubusercontent.com/Smartesider/aiforskning/main/quick-deploy.sh
+chmod +x quick-deploy.sh
+./quick-deploy.sh --domain testsider.no --email admin@testsider.no
+```
+
+**Advanced installation with custom ports:**
+```bash
+./quick-deploy.sh --domain testsider.no --port 5001 --nginx-port 8080 --ssl-port 8443
+```
+
+**Development installation (no SSL):**
+```bash
+./quick-deploy.sh --domain localhost --dev
+```
+
+### 🔧 Local Development
+
+```bash
+git clone https://github.com/Smartesider/aiforskning.git
 cd aiforskning
 pip install -r requirements.txt
-```
-
-### Initialize Database
-
-```bash
 python main.py init
-```
-
-### Run Demo
-
-```bash
-python demo.py
-```
-
-### Launch Web Dashboard
-
-```bash
 python main.py web
 ```
 
@@ -239,6 +247,62 @@ The framework automatically flags concerning changes:
 - **Anomaly Detection**: Flags "uncharacteristic" responses based on history
 - **Batch Processing**: Test multiple models simultaneously
 - **A/B Testing**: Compare different model versions or configurations
+
+## 🚀 Advanced Deployment Features
+
+### 🛡️ Production-Ready Installation
+
+The advanced installer (`install-advanced.sh`) provides enterprise-grade deployment with:
+
+**🔍 Intelligent Conflict Detection**
+- Automatic port conflict detection and resolution
+- Nginx configuration conflict analysis
+- Service conflict identification with suggested alternatives
+- Smart resolution options (1-5 choices) for any conflicts found
+
+**🔐 SSL Certificate Management**
+- Automatic SSL certificate detection and validation
+- Let's Encrypt integration with auto-renewal
+- Certificate expiry monitoring (30+ days = valid, <30 days = renewal)
+- SSL functionality verification on ports 443 and custom ports
+- Fallback certificate generation if renewal fails
+
+**🌐 Multi-Server Virtual Host Support**
+- Nginx virtual host configuration optimized for multi-server environments
+- Domain-specific configurations that don't interfere with existing sites
+- Security headers and rate limiting per virtual host
+- Static file optimization with proper caching
+
+**⚡ Smart Installation Process**
+- Prerequisites checking and dependency resolution
+- Service status monitoring and health checks
+- Automatic backup creation before changes
+- Rollback capabilities if installation fails
+- Comprehensive logging for troubleshooting
+
+**🔧 Deployment Options**
+
+```bash
+# Production deployment with SSL
+./install-advanced.sh --domain testsider.no --email admin@testsider.no
+
+# Development deployment (no SSL)
+./install-advanced.sh --domain localhost --dev
+
+# Custom port configuration
+./install-advanced.sh --domain testsider.no --port 5001 --nginx-port 8080
+
+# Custom document root
+./install-advanced.sh --domain testsider.no --docroot /var/www/custom-ethics
+```
+
+### 📊 Post-Installation Features
+
+- **Automated Health Checks**: Verifies system components are functioning
+- **Real-time Monitoring**: Integrates with monitoring tools for uptime and performance
+- **Centralized Logging**: All logs in `/var/log/aiforskning/` for easy access
+- **Backup & Restore**: Automated backups of configurations and data
+- **Security Hardening**: Optional scripts to enhance server security
 
 ## 🤝 Contributing
 
