@@ -1,0 +1,8 @@
+{
+  "name": "Copilot CLI DevEnv",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "bash .devcontainer/setup-copilot.sh"
+}
