@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  ai-ethics-framework:
+    build: .
+    container_name: ai-ethics-framework
+    restart: unless-stopped
+    ports:
+      - "8020:80"  # Map host port 8020 to container port 80
+    networks:
+      - ai-ethics-net
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app/src
+    volumes:
+      - ./ethics_data.db:/app/ethics_data.db
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  ai-ethics-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.17.0.0/16

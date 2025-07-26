@@ -11,6 +11,12 @@ from pathlib import Path
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
+# Import Flask app for gunicorn
+from src.web_app import create_app
+
+# Create the Flask app instance for gunicorn
+app = create_app()
+
 def main():
     """Run the web application with proper error handling"""
     try:
