@@ -1,36 +1,32 @@
-# Dockerfile for AI Ethics Testing Framework
-# Optimized for Portainer deployment
-
 FROM python:3.11-slim
 
-# Set working directory
+# Non-root user for Flask application
+RUN groupadd -r flaskapp && useradd -r -g flaskapp flaskapp
+
 WORKDIR /app
 
-# Install system dependencies
+# Install dependencies for MariaDB
 RUN apt-get update && apt-get install -y \
-    gcc \
+    build-essential \
+    libmariadb-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker layer caching
-COPY requirements.txt .
-
-# Install Python dependencies
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+COPY . /app/
+RUN chown -R flaskapp:flaskapp /app
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-RUN chown -R appuser:appuser /app
-USER appuser
+USER flaskapp
 
-# Expose port 80 (internal container port)
-EXPOSE 80
+EXPOSE 8010
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:80/ || exit 1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=run_app:app
+ENV FLASK_ENV=production
 
-# Start the application with gunicorn
-CMD ["gunicorn", "--config", "gunicorn.conf.py", "run_app:app"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8010/health/ || exit 1
+
+CMD ["gunicorn", "run_app:app", "--bind", "0.0.0.0:8010", "--workers", "3"]

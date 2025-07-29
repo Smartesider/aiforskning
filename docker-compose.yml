@@ -1,30 +1,38 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  ai-ethics-framework:
+  skyforskning:
     build: .
-    container_name: ai-ethics-framework
-    restart: unless-stopped
+    container_name: skyforskning
     ports:
-      - "8020:80"  # Map host port 8020 to container port 80
-    networks:
-      - ai-ethics-net
-    environment:
-      - FLASK_ENV=production
-      - PYTHONPATH=/app/src
+      - "127.0.0.1:8010:8010"
+    env_file:
+      - .env
     volumes:
-      - ./ethics_data.db:/app/ethics_data.db
-      - ./logs:/app/logs
+      - .:/app
+    depends_on:
+      - mariadb
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8010/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 5s
 
-networks:
-  ai-ethics-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.17.0.0/16
+  mariadb:
+    image: mariadb:10.11
+    container_name: mariadb_skyforskning
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: Klokken!12!?!
+      MARIADB_DATABASE: skyforskning
+      MARIADB_USER: skyforskning
+      MARIADB_PASSWORD: Klokken!12!?!
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+volumes:
+  mariadb_data:

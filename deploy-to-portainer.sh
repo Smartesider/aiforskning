@@ -105,7 +105,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:80/ || exit 1
 
 # Start with gunicorn
-CMD ["python3", "-m", "gunicorn", "--bind", "0.0.0.0:80", "--workers", "4", "--timeout", "120", "run_app:app"]
+CMD ["python3", "-m", "gunicorn", "--bind", "0.0.0.0:8010", "--workers", "4", "--timeout", "120", "run_app:app"]
 EOF
 
 # Build the new image
@@ -152,17 +152,17 @@ UPDATE_CONFIG=$(cat << EOF
         "FLASK_ENV=production"
     ],
     "ExposedPorts": {
-        "80/tcp": {}
+        "8010/tcp": {}
     },
     "HostConfig": {
         "PortBindings": {
-            "80/tcp": [{"HostPort": "8020"}]
+            "8010/tcp": [{"HostPort": "8010"}]
         },
         "RestartPolicy": {
             "Name": "unless-stopped"
         }
     },
-    "Cmd": ["python3", "-m", "gunicorn", "--bind", "0.0.0.0:80", "--workers", "4", "--timeout", "120", "run_app:app"]
+    "Cmd": ["python3", "-m", "gunicorn", "--bind", "0.0.0.0:8010", "--workers", "4", "--timeout", "120", "run_app:app"]
 }
 EOF
 )
@@ -182,17 +182,17 @@ portainer_api "POST" "/endpoints/$ENDPOINT_ID/docker/containers/$CONTAINER_ID/up
         "FLASK_ENV=production"
     ],
     "ExposedPorts": {
-        "80/tcp": {}
+        "8010/tcp": {}
     },
     "HostConfig": {
         "PortBindings": {
-            "80/tcp": [{"HostPort": "8020"}]
+            "8010/tcp": [{"HostPort": "8010"}]
         },
         "RestartPolicy": {
             "Name": "unless-stopped"
         }
     },
-    "Cmd": ["python3", "-m", "gunicorn", "--bind", "0.0.0.0:80", "--workers", "4", "--timeout", "120", "run_app:app"]
+    "Cmd": ["python3", "-m", "gunicorn", "--bind", "0.0.0.0:8010", "--workers", "4", "--timeout", "120", "run_app:app"]
 }
 EOF
     )

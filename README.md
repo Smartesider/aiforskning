@@ -98,7 +98,7 @@ python main.py web --port 8080
 aiforskning/
 ├── src/
 │   ├── models.py          # Data models and enums
-│   ├── database.py        # SQLite storage layer
+│   ├── database.py        # MariaDB storage layer
 │   ├── analysis.py        # Response analysis engine
 │   ├── testing.py         # Test runner and model interface
 │   └── web_app.py         # Flask web application

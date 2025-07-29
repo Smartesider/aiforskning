@@ -32,7 +32,7 @@ upstream ai_ethics_backend {
 }
 
 server {
-    listen 8020;
+    listen 8010;
     server_name forskning.skycode.no localhost _;
     
     # Remove any static content and proxy everything to AI Ethics Framework
@@ -140,12 +140,12 @@ EOF
 
 echo "✅ Opprettet nginx konfigurasjoner"
 
-# Lag en enkel Python proxy server som kan kjøre på port 8020
+# Lag en enkel Python proxy server som kan kjøre på port 8010
 cat > /tmp/simple_proxy.py << 'EOF'
 #!/usr/bin/env python3
 """
 Enkel proxy server som videresender alle forespørsler 
-fra port 8020 til AI Ethics Framework på port 8021
+fra port 8010 til AI Ethics Framework på port 8021
 """
 
 import http.server
@@ -226,7 +226,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self.wfile.write(error_msg.encode())
 
 if __name__ == "__main__":
-    PORT = 8020
+    PORT = 8010
     print(f"Starting proxy server on port {PORT}")
     print(f"Proxying to AI Ethics Framework at {AI_ETHICS_URL}")
     
@@ -268,14 +268,14 @@ echo "sudo nginx -t && sudo systemctl reload nginx"
 echo ""
 
 echo "=== LØSNING 2: Python proxy server ==="
-echo "# Stopp det som kjører på port 8020, deretter:"
+echo "# Stopp det som kjører på port 8010, deretter:"
 echo "python3 /tmp/simple_proxy.py"
 echo ""
 
 echo "=== LØSNING 3: Docker container replacement ==="
 echo "# Hvis det kjører i en container:"
-echo "docker stop \$(docker ps -q --filter 'publish=8020')"
-echo "docker run -d -p 8020:80 -v /home/skyforskning.no/forskning:/app -w /app python:3.11-slim sh -c 'pip install flask flask-cors gunicorn && python3 -m gunicorn --bind 0.0.0.0:80 --workers 4 run_app:app'"
+echo "docker stop \$(docker ps -q --filter 'publish=8010')"
+echo "docker run -d -p 8010:80 -v /home/skyforskning.no/forskning:/app -w /app python:3.11-slim sh -c 'pip install flask flask-cors gunicorn && python3 -m gunicorn --bind 0.0.0.0:80 --workers 4 run_app:app'"
 echo ""
 
 echo "📊 NÅVÆRENDE STATUS:"

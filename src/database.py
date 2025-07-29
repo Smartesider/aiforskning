@@ -3,7 +3,8 @@ Data storage and retrieval for the AI Ethics Testing Framework
 """
 
 import json
-import sqlite3
+import pymysql as MySQLdb
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -11,104 +12,106 @@ from contextlib import contextmanager
 
 from .models import (
     EthicalDilemma, ModelResponse, StanceChange,
-    TestSession, EthicalStance, DilemmaCategory
+    TestSession, EthicalStance, DilemmaCategory, User, UserRole
 )
 
 
 class EthicsDatabase:
-    """SQLite database for storing ethics test data"""
+    """MariaDB database for storing ethics test data"""
     
-    def __init__(self, db_path: str = "ethics_data.db"):
-        self.db_path = Path(db_path)
+    def __init__(self):
+        """Initialize database connection parameters from environment"""
+        self.db_config = {
+            'host': os.getenv('DB_HOST', 'localhost'),  # Changed from 'mariadb' to 'localhost'
+            'port': int(os.getenv('DB_PORT', '3306')),
+            'user': os.getenv('DB_USER', 'skyforskning'),
+            'passwd': os.getenv('DB_PASSWORD', 'Klokken!12!?!'),
+            'db': os.getenv('DB_NAME', 'skyforskning'),
+            'charset': 'utf8mb4',
+            'autocommit': True
+        }
         self.init_database()
     
     def init_database(self):
         """Initialize the database schema"""
         with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
             # Responses table
-            conn.execute("""
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS responses (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    prompt_id TEXT NOT NULL,
-                    model TEXT NOT NULL,
-                    timestamp TEXT NOT NULL,
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    prompt_id VARCHAR(255) NOT NULL,
+                    model VARCHAR(255) NOT NULL,
+                    timestamp DATETIME NOT NULL,
                     response_text TEXT NOT NULL,
-                    sentiment_score REAL NOT NULL,
-                    stance TEXT NOT NULL,
-                    certainty_score REAL NOT NULL,
+                    sentiment_score DECIMAL(5,4) NOT NULL,
+                    stance VARCHAR(100) NOT NULL,
+                    certainty_score DECIMAL(5,4) NOT NULL,
                     keywords TEXT NOT NULL,
-                    response_length INTEGER NOT NULL,
-                    session_id TEXT
-                )
+                    response_length INT NOT NULL,
+                    session_id VARCHAR(255),
+                    INDEX idx_responses_prompt_id (prompt_id),
+                    INDEX idx_responses_model (model),
+                    INDEX idx_responses_timestamp (timestamp)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
             
             # Stance changes table
-            conn.execute("""
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS stance_changes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    prompt_id TEXT NOT NULL,
-                    model TEXT NOT NULL,
-                    previous_stance TEXT NOT NULL,
-                    new_stance TEXT NOT NULL,
-                    previous_timestamp TEXT NOT NULL,
-                    new_timestamp TEXT NOT NULL,
-                    magnitude REAL NOT NULL,
-                    alert_level TEXT NOT NULL
-                )
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    prompt_id VARCHAR(255) NOT NULL,
+                    model VARCHAR(255) NOT NULL,
+                    initial_stance VARCHAR(100) NOT NULL,
+                    final_stance VARCHAR(100) NOT NULL,
+                    change_magnitude DECIMAL(5,4) NOT NULL,
+                    change_direction VARCHAR(50) NOT NULL,
+                    timestamp DATETIME NOT NULL,
+                    session_id VARCHAR(255),
+                    INDEX idx_stance_changes_prompt_id (prompt_id),
+                    INDEX idx_stance_changes_model (model)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
             
             # Test sessions table
-            conn.execute("""
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS test_sessions (
-                    session_id TEXT PRIMARY KEY,
-                    timestamp TEXT NOT NULL,
-                    model TEXT NOT NULL,
-                    completion_rate REAL NOT NULL
-                )
+                    session_id VARCHAR(255) PRIMARY KEY,
+                    timestamp DATETIME NOT NULL,
+                    model VARCHAR(255) NOT NULL,
+                    completion_rate DECIMAL(5,4) NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
             
-            # Create indexes for performance
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_responses_model_prompt 
-                ON responses(model, prompt_id)
-            """)
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_responses_timestamp 
-                ON responses(timestamp)
-            """)
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_stance_changes_model 
-                ON stance_changes(model)
+            # Users table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(50) UNIQUE NOT NULL,
+                    email VARCHAR(100) UNIQUE NOT NULL,
+                    password_hash VARCHAR(256) NOT NULL,
+                    salt VARCHAR(64) NOT NULL,
+                    role ENUM('viewer', 'researcher', 'admin', 'superuser') DEFAULT 'viewer',
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    last_login DATETIME NULL,
+                    INDEX idx_users_username (username),
+                    INDEX idx_users_email (email)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
     
     @contextmanager
     def get_connection(self):
-        """Get a database connection with automatic cleanup and timeout"""
+        """Get a MariaDB database connection with automatic cleanup"""
         conn = None
         try:
-            # Add timeout to prevent locking issues
-            conn = sqlite3.connect(self.db_path, timeout=30.0, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            # Enable WAL mode for better concurrency
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA synchronous=NORMAL")
-            conn.execute("PRAGMA temp_store=memory")
-            conn.execute("PRAGMA mmap_size=268435456")  # 256MB
+            conn = MySQLdb.connect(**self.db_config)
             yield conn
-        except sqlite3.OperationalError as e:
-            if "database is locked" in str(e):
-                # Retry once after a short delay
-                import time
-                time.sleep(0.1)
-                if conn:
-                    conn.close()
-                conn = sqlite3.connect(self.db_path, timeout=30.0, check_same_thread=False)
-                conn.row_factory = sqlite3.Row
-                conn.execute("PRAGMA journal_mode=WAL")
-                conn.execute("PRAGMA synchronous=NORMAL")
-                yield conn
-            else:
-                raise
+        except MySQLdb.Error as e:
+            if conn:
+                conn.rollback()
+            raise Exception(f"Database error: {e}")
         finally:
             if conn:
                 conn.close()
@@ -117,15 +120,16 @@ class EthicsDatabase:
                      session_id: Optional[str] = None):
         """Save a model response to the database"""
         with self.get_connection() as conn:
-            conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 INSERT INTO responses
                 (prompt_id, model, timestamp, response_text, sentiment_score,
                  stance, certainty_score, keywords, response_length, session_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 response.prompt_id,
                 response.model,
-                response.timestamp.isoformat(),
+                response.timestamp,
                 response.response_text,
                 response.sentiment_score,
                 response.stance.value,
@@ -134,39 +138,43 @@ class EthicsDatabase:
                 response.response_length,
                 session_id
             ))
-            conn.commit()
     
     def save_stance_change(self, change: StanceChange):
         """Save a detected stance change"""
         with self.get_connection() as conn:
-            conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 INSERT INTO stance_changes
-                (prompt_id, model, previous_stance, new_stance, 
-                 previous_timestamp, new_timestamp, magnitude, alert_level)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (prompt_id, model, initial_stance, final_stance, 
+                 change_magnitude, change_direction, timestamp, session_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 change.prompt_id,
                 change.model,
-                change.previous_stance.value,
-                change.new_stance.value,
-                change.previous_timestamp.isoformat(),
-                change.new_timestamp.isoformat(),
-                change.magnitude,
-                change.alert_level
+                change.initial_stance.value,
+                change.final_stance.value,
+                change.change_magnitude,
+                change.change_direction,
+                change.timestamp,
+                getattr(change, 'session_id', None)
             ))
-            conn.commit()
     
     def save_test_session(self, session: TestSession):
         """Save a complete test session"""
         with self.get_connection() as conn:
+            cursor = conn.cursor()
             # Save session metadata
-            conn.execute("""
-                INSERT OR REPLACE INTO test_sessions
+            cursor.execute("""
+                INSERT INTO test_sessions
                 (session_id, timestamp, model, completion_rate)
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                timestamp = VALUES(timestamp),
+                model = VALUES(model),
+                completion_rate = VALUES(completion_rate)
             """, (
                 session.session_id,
-                session.timestamp.isoformat(),
+                session.timestamp,
                 session.model,
                 session.completion_rate
             ))
@@ -174,119 +182,264 @@ class EthicsDatabase:
             # Save all responses with session_id
             for response in session.responses:
                 self.save_response(response, session.session_id)
-            
-            conn.commit()
     
     def get_responses_for_prompt(self, prompt_id: str, model: Optional[str] = None) -> List[ModelResponse]:
         """Get all responses for a specific prompt"""
         with self.get_connection() as conn:
+            cursor = conn.cursor()
             if model:
-                cursor = conn.execute("""
+                cursor.execute("""
                     SELECT * FROM responses 
-                    WHERE prompt_id = ? AND model = ?
+                    WHERE prompt_id = %s AND model = %s
                     ORDER BY timestamp DESC
                 """, (prompt_id, model))
             else:
-                cursor = conn.execute("""
+                cursor.execute("""
                     SELECT * FROM responses 
-                    WHERE prompt_id = ?
+                    WHERE prompt_id = %s
                     ORDER BY timestamp DESC
                 """, (prompt_id,))
             
             responses = []
             for row in cursor.fetchall():
                 responses.append(ModelResponse(
-                    prompt_id=row['prompt_id'],
-                    model=row['model'],
-                    timestamp=datetime.fromisoformat(row['timestamp']),
-                    response_text=row['response_text'],
-                    sentiment_score=row['sentiment_score'],
-                    stance=EthicalStance(row['stance']),
-                    certainty_score=row['certainty_score'],
-                    keywords=json.loads(row['keywords'])
+                    prompt_id=row[1],  # prompt_id
+                    model=row[2],      # model
+                    timestamp=row[3],  # timestamp
+                    response_text=row[4],  # response_text
+                    sentiment_score=row[5],  # sentiment_score
+                    stance=EthicalStance(row[6]),  # stance
+                    certainty_score=row[7],  # certainty_score
+                    keywords=json.loads(row[8])  # keywords
                 ))
             return responses
     
     def get_stance_changes(self, model: Optional[str] = None, 
-                          alert_level: Optional[str] = None) -> List[StanceChange]:
+                          session_id: Optional[str] = None) -> List[StanceChange]:
         """Get stance changes with optional filtering"""
         with self.get_connection() as conn:
+            cursor = conn.cursor()
             query = "SELECT * FROM stance_changes WHERE 1=1"
             params = []
             
             if model:
-                query += " AND model = ?"
+                query += " AND model = %s"
                 params.append(model)
             
-            if alert_level:
-                query += " AND alert_level = ?"
-                params.append(alert_level)
+            if session_id:
+                query += " AND session_id = %s"
+                params.append(session_id)
             
-            query += " ORDER BY new_timestamp DESC"
+            query += " ORDER BY timestamp DESC"
             
-            cursor = conn.execute(query, params)
+            cursor.execute(query, params)
             changes = []
             for row in cursor.fetchall():
                 changes.append(StanceChange(
-                    prompt_id=row['prompt_id'],
-                    model=row['model'],
-                    previous_stance=EthicalStance(row['previous_stance']),
-                    new_stance=EthicalStance(row['new_stance']),
-                    previous_timestamp=datetime.fromisoformat(row['previous_timestamp']),
-                    new_timestamp=datetime.fromisoformat(row['new_timestamp']),
-                    magnitude=row['magnitude'],
-                    alert_level=row['alert_level']
+                    prompt_id=row[1],  # prompt_id
+                    model=row[2],      # model
+                    initial_stance=EthicalStance(row[3]),  # initial_stance
+                    final_stance=EthicalStance(row[4]),    # final_stance
+                    change_magnitude=row[5],  # change_magnitude
+                    change_direction=row[6],  # change_direction
+                    timestamp=row[7]          # timestamp
                 ))
             return changes
     
     def get_model_statistics(self, model: str, days: int = 30) -> Dict[str, Any]:
         """Get statistical summary for a model over the last N days"""
         with self.get_connection() as conn:
+            cursor = conn.cursor()
             # Calculate date threshold
             from datetime import timedelta
-            threshold = (datetime.now() - timedelta(days=days)).isoformat()
+            threshold = datetime.now() - timedelta(days=days)
             
             # Get basic stats
-            cursor = conn.execute("""
+            cursor.execute("""
                 SELECT 
                     COUNT(*) as total_responses,
                     AVG(sentiment_score) as avg_sentiment,
                     AVG(certainty_score) as avg_certainty
                 FROM responses 
-                WHERE model = ? AND timestamp >= ?
+                WHERE model = %s AND timestamp >= %s
             """, (model, threshold))
             
             stats = cursor.fetchone()
             
             # Get stance distribution
-            cursor = conn.execute("""
+            cursor.execute("""
                 SELECT stance, COUNT(*) as count
                 FROM responses 
-                WHERE model = ? AND timestamp >= ?
+                WHERE model = %s AND timestamp >= %s
                 GROUP BY stance
             """, (model, threshold))
             
-            stance_distribution = {row['stance']: row['count'] for row in cursor.fetchall()}
+            stance_distribution = {row[0]: row[1] for row in cursor.fetchall()}
             
             # Get change frequency
-            cursor = conn.execute("""
+            cursor.execute("""
                 SELECT COUNT(*) as changes
                 FROM stance_changes
-                WHERE model = ? AND new_timestamp >= ?
+                WHERE model = %s AND timestamp >= %s
             """, (model, threshold))
             
-            changes = cursor.fetchone()['changes']
-            change_frequency = changes / max(stats['total_responses'], 1)
+            changes = cursor.fetchone()[0]
+            change_frequency = changes / max(stats[0], 1)  # total_responses
             
             return {
                 'model': model,
                 'time_period': f'last_{days}_days',
-                'total_responses': stats['total_responses'],
-                'avg_sentiment': stats['avg_sentiment'] or 0.0,
+                'total_responses': stats[0] or 0,
+                'avg_sentiment': stats[1] or 0.0,
                 'stance_distribution': stance_distribution,
-                'avg_certainty': stats['avg_certainty'] or 0.0,
+                'avg_certainty': stats[2] or 0.0,
                 'change_frequency': change_frequency
             }
+    
+    # User Management Methods
+    
+    def create_user(self, username: str, email: str, password: str, 
+                   role: UserRole = UserRole.VIEWER) -> User:
+        """Create a new user"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if username or email already exists
+            cursor.execute("""
+                SELECT username, email FROM users 
+                WHERE username = %s OR email = %s
+            """, (username, email))
+            
+            existing = cursor.fetchone()
+            if existing:
+                if existing[0] == username:
+                    raise ValueError(f"Username '{username}' already exists")
+                else:
+                    raise ValueError(f"Email '{email}' already exists")
+            
+            # Hash password
+            password_hash, salt = User.hash_password(password)
+            
+            # Insert user
+            cursor.execute("""
+                INSERT INTO users (username, email, password_hash, salt, role)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (username, email, password_hash, salt, role.value))
+            
+            user_id = cursor.lastrowid
+            
+            # Return created user
+            return User(
+                id=user_id,
+                username=username,
+                email=email,
+                password_hash=password_hash,
+                salt=salt,
+                role=role,
+                is_active=True,
+                created_at=datetime.now()
+            )
+    
+    def get_user_by_username(self, username: str) -> Optional[User]:
+        """Get user by username"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, username, email, password_hash, salt, role, 
+                       is_active, created_at, last_login
+                FROM users WHERE username = %s AND is_active = TRUE
+            """, (username,))
+            
+            row = cursor.fetchone()
+            if row:
+                return User(
+                    id=row[0],
+                    username=row[1],
+                    email=row[2],
+                    password_hash=row[3],
+                    salt=row[4],
+                    role=UserRole(row[5]),
+                    is_active=bool(row[6]),
+                    created_at=row[7],
+                    last_login=row[8]
+                )
+            return None
+    
+    def authenticate_user(self, username: str, password: str) -> Optional[User]:
+        """Authenticate user with username and password"""
+        user = self.get_user_by_username(username)
+        if user and user.verify_password(password):
+            # Update last login
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE users SET last_login = %s WHERE id = %s
+                """, (datetime.now(), user.id))
+            return user
+        return None
+    
+    def update_user_password(self, user_id: int, new_password: str) -> bool:
+        """Update user password"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            password_hash, salt = User.hash_password(new_password)
+            
+            cursor.execute("""
+                UPDATE users SET password_hash = %s, salt = %s 
+                WHERE id = %s
+            """, (password_hash, salt, user_id))
+            
+            return cursor.rowcount > 0
+    
+    def list_users(self) -> List[User]:
+        """List all users (admin function)"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, username, email, password_hash, salt, role, 
+                       is_active, created_at, last_login
+                FROM users ORDER BY created_at DESC
+            """)
+            
+            users = []
+            for row in cursor.fetchall():
+                users.append(User(
+                    id=row[0],
+                    username=row[1],
+                    email=row[2],
+                    password_hash=row[3],
+                    salt=row[4],
+                    role=UserRole(row[5]),
+                    is_active=bool(row[6]),
+                    created_at=row[7],
+                    last_login=row[8]
+                ))
+            return users
+    
+    def get_superusers(self) -> List[User]:
+        """Get all superusers"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, username, email, password_hash, salt, role, 
+                       is_active, created_at, last_login
+                FROM users WHERE role = 'superuser' AND is_active = TRUE
+            """)
+            
+            users = []
+            for row in cursor.fetchall():
+                users.append(User(
+                    id=row[0],
+                    username=row[1],
+                    email=row[2],
+                    password_hash=row[3],
+                    salt=row[4],
+                    role=UserRole(row[5]),
+                    is_active=bool(row[6]),
+                    created_at=row[7],
+                    last_login=row[8]
+                ))
+            return users
 
 
 class DilemmaLoader:

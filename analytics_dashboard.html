@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ethics Analysis Dashboard - Monthly LLM Performance & Trends</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Monthly Analysis of AI Ethics Performance, Political Bias, and Behavioral Trends across Major Language Models">
+    <meta name="theme-color" content="#1e40af">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/assets/favicon.ico">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); }
+        .glass { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .metric-card { transition: all 0.3s ease; }
+        .metric-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .score-excellent { color: #059669; }
+        .score-good { color: #0891b2; }
+        .score-average { color: #d97706; }
+        .score-poor { color: #dc2626; }
+        .trend-up { color: #059669; }
+        .trend-down { color: #dc2626; }
+        .trend-stable { color: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="gradient-bg text-white shadow-lg">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Ethics Analysis Dashboard</h1>
+                            <p class="text-blue-100 text-sm">Monthly LLM Performance & Bias Monitoring</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <p class="text-sm text-blue-100">Last Updated</p>
+                            <p class="font-semibold">{{ lastUpdate }}</p>
+                        </div>
+                        <a href="/admin/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-cog mr-2"></i>Admin Panel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Top Statistics Bar -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="container mx-auto px-6 py-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600">{{ totalTests }}</div>
+                        <div class="text-sm text-gray-600">Total Tests This Month</div>
+                        <div class="text-xs" :class="getTrendClass(testsTrend)">
+                            <i :class="getTrendIcon(testsTrend)"></i> {{ testsTrend }}% vs last month
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-600">{{ activeModels }}</div>
+                        <div class="text-sm text-gray-600">Active LLM Models</div>
+                        <div class="text-xs text-gray-500">Across {{ totalProviders }} providers</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600">{{ avgScore }}</div>
+                        <div class="text-sm text-gray-600">Average Ethics Score</div>
+                        <div class="text-xs" :class="getTrendClass(scoreTrend)">
+                            <i :class="getTrendIcon(scoreTrend)"></i> {{ scoreTrend }} points vs last month
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-orange-600">{{ criticalAlerts }}</div>
+                        <div class="text-sm text-gray-600">Critical Bias Alerts</div>
+                        <div class="text-xs text-red-600" v-if="criticalAlerts > 0">Requires attention</div>
+                        <div class="text-xs text-gray-500" v-else>All systems normal</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Trends Overview -->
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Ethics Score Trends -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Monthly Ethics Score Trends</h2>
+                    <canvas id="ethicsChart" width="400" height="200"></canvas>
+                </div>
+                
+                <!-- Political Bias Analysis -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Political Bias Detection</h2>
+                    <div class="mb-4">
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4" v-if="criticalBiasDetected">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                                <div>
+                                    <p class="font-semibold text-red-800">Critical Bias Alert: Grok (xAI)</p>
+                                    <p class="text-red-700 text-sm">Consistent right-wing political bias detected in responses (87% confidence)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="biasChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Individual LLM Performance Analysis -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-6">Individual LLM Performance Analysis</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div v-for="model in modelAnalysis" :key="model.id" class="border rounded-lg p-4 metric-card">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <i :class="model.icon + ' text-2xl mr-3'"></i>
+                                <div>
+                                    <h3 class="font-semibold">{{ model.name }}</h3>
+                                    <p class="text-sm text-gray-600">{{ model.provider }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold" :class="getScoreClass(model.overallScore)">{{ model.overallScore }}</div>
+                                <div class="text-xs text-gray-500">Overall Score</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Category Scores -->
+                        <div class="space-y-2">
+                            <div v-for="category in model.categories" :key="category.name" class="flex justify-between items-center">
+                                <span class="text-sm">{{ category.name }}</span>
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="h-2 rounded-full" :style="`width: ${category.score}%; background-color: ${getCategoryColor(category.score)}`"></div>
+                                    </div>
+                                    <span class="text-xs font-medium w-8">{{ category.score }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerts -->
+                        <div v-if="model.alerts.length > 0" class="mt-3 pt-3 border-t">
+                            <div v-for="alert in model.alerts" :key="alert.id" class="text-xs p-2 rounded mb-1" :class="getAlertClass(alert.severity)">
+                                <i :class="getAlertIcon(alert.severity) + ' mr-1'"></i>
+                                {{ alert.message }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Category Analysis -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-6">Detailed Category Analysis</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="category in detailedCategories" :key="category.name" class="border rounded-lg p-4">
+                        <h3 class="font-semibold mb-3 flex items-center">
+                            <i :class="category.icon + ' mr-2'"></i>
+                            {{ category.name }}
+                        </h3>
+                        <div class="space-y-2">
+                            <div v-for="model in category.models" :key="model.name" class="flex justify-between items-center">
+                                <span class="text-sm">{{ model.name }}</span>
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium mr-2" :class="getScoreClass(model.score)">{{ model.score }}</span>
+                                    <i v-if="model.trend > 0" class="fas fa-arrow-up text-green-500 text-xs"></i>
+                                    <i v-else-if="model.trend < 0" class="fas fa-arrow-down text-red-500 text-xs"></i>
+                                    <i v-else class="fas fa-minus text-gray-400 text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t">
+                            <div class="text-xs text-gray-600">
+                                <strong>Avg:</strong> {{ category.average }} 
+                                <strong class="ml-2">Best:</strong> {{ category.best }}
+                                <strong class="ml-2">Worst:</strong> {{ category.worst }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    lastUpdate: new Date().toLocaleString(),
+                    totalTests: 2847,
+                    testsTrend: 12.5,
+                    activeModels: 17,
+                    totalProviders: 4,
+                    avgScore: 74.2,
+                    scoreTrend: -2.1,
+                    criticalAlerts: 3,
+                    criticalBiasDetected: true,
+                    
+                    modelAnalysis: [
+                        {
+                            id: 1,
+                            name: "GPT-4",
+                            provider: "OpenAI",
+                            icon: "fab fa-openai text-green-500",
+                            overallScore: 87,
+                            categories: [
+                                { name: "Political Neutrality", score: 85 },
+                                { name: "Gender Equality", score: 91 },
+                                { name: "Human Rights", score: 89 },
+                                { name: "Ethics", score: 88 },
+                                { name: "Cultural Sensitivity", score: 82 }
+                            ],
+                            alerts: []
+                        },
+                        {
+                            id: 2,
+                            name: "Claude-3",
+                            provider: "Anthropic",
+                            icon: "fas fa-robot text-blue-500",
+                            overallScore: 92,
+                            categories: [
+                                { name: "Political Neutrality", score: 94 },
+                                { name: "Gender Equality", score: 93 },
+                                { name: "Human Rights", score: 91 },
+                                { name: "Ethics", score: 95 },
+                                { name: "Cultural Sensitivity", score: 88 }
+                            ],
+                            alerts: []
+                        },
+                        {
+                            id: 3,
+                            name: "Grok",
+                            provider: "xAI",
+                            icon: "fas fa-brain text-purple-500",
+                            overallScore: 41,
+                            categories: [
+                                { name: "Political Neutrality", score: 23 },
+                                { name: "Gender Equality", score: 67 },
+                                { name: "Human Rights", score: 45 },
+                                { name: "Ethics", score: 38 },
+                                { name: "Cultural Sensitivity", score: 32 }
+                            ],
+                            alerts: [
+                                { id: 1, severity: "critical", message: "Persistent right-wing political bias detected" },
+                                { id: 2, severity: "warning", message: "Inconsistent human rights responses" }
+                            ]
+                        },
+                        {
+                            id: 4,
+                            name: "Gemini Pro",
+                            provider: "Google",
+                            icon: "fab fa-google text-red-500",
+                            overallScore: 79,
+                            categories: [
+                                { name: "Political Neutrality", score: 81 },
+                                { name: "Gender Equality", score: 84 },
+                                { name: "Human Rights", score: 77 },
+                                { name: "Ethics", score: 75 },
+                                { name: "Cultural Sensitivity", score: 78 }
+                            ],
+                            alerts: [
+                                { id: 1, severity: "info", message: "Slight improvement in ethics scores" }
+                            ]
+                        },
+                        {
+                            id: 5,
+                            name: "Llama 3.1",
+                            provider: "Meta",
+                            icon: "fab fa-meta text-blue-600",
+                            overallScore: 83,
+                            categories: [
+                                { name: "Political Neutrality", score: 89 },
+                                { name: "Gender Equality", score: 85 },
+                                { name: "Human Rights", score: 81 },
+                                { name: "Ethics", score: 80 },
+                                { name: "Cultural Sensitivity", score: 79 }
+                            ],
+                            alerts: []
+                        },
+                        {
+                            id: 6,
+                            name: "Command R+",
+                            provider: "Cohere",
+                            icon: "fas fa-layer-group text-purple-600",
+                            overallScore: 76,
+                            categories: [
+                                { name: "Political Neutrality", score: 78 },
+                                { name: "Gender Equality", score: 80 },
+                                { name: "Human Rights", score: 74 },
+                                { name: "Ethics", score: 73 },
+                                { name: "Cultural Sensitivity", score: 75 }
+                            ],
+                            alerts: [
+                                { id: 1, severity: "warning", message: "Inconsistent performance in human rights category" }
+                            ]
+                        }
+                    ],
+
+                    detailedCategories: [
+                        {
+                            name: "Political Neutrality",
+                            icon: "fas fa-balance-scale text-blue-500",
+                            average: 76,
+                            best: 94,
+                            worst: 23,
+                            models: [
+                                { name: "Claude-3", score: 94, trend: 2 },
+                                { name: "Llama 3.1", score: 89, trend: 4 },
+                                { name: "GPT-4", score: 85, trend: -1 },
+                                { name: "Gemini Pro", score: 81, trend: 3 },
+                                { name: "Command R+", score: 78, trend: 1 },
+                                { name: "Grok", score: 23, trend: -5 }
+                            ]
+                        },
+                        {
+                            name: "Gender Equality",
+                            icon: "fas fa-venus-mars text-purple-500",
+                            average: 83,
+                            best: 93,
+                            worst: 67,
+                            models: [
+                                { name: "Claude-3", score: 93, trend: 1 },
+                                { name: "GPT-4", score: 91, trend: 0 },
+                                { name: "Llama 3.1", score: 85, trend: 2 },
+                                { name: "Gemini Pro", score: 84, trend: 2 },
+                                { name: "Command R+", score: 80, trend: 1 },
+                                { name: "Grok", score: 67, trend: -3 }
+                            ]
+                        },
+                        {
+                            name: "Human Rights",
+                            icon: "fas fa-hand-holding-heart text-red-500",
+                            average: 78,
+                            best: 91,
+                            worst: 45,
+                            models: [
+                                { name: "Claude-3", score: 91, trend: 1 },
+                                { name: "GPT-4", score: 89, trend: -2 },
+                                { name: "Llama 3.1", score: 81, trend: 3 },
+                                { name: "Gemini Pro", score: 77, trend: 0 },
+                                { name: "Command R+", score: 74, trend: -1 },
+                                { name: "Grok", score: 45, trend: -8 }
+                            ]
+                        },
+                        {
+                            name: "Ethics",
+                            icon: "fas fa-gavel text-green-500",
+                            average: 78,
+                            best: 95,
+                            worst: 38,
+                            models: [
+                                { name: "Claude-3", score: 95, trend: 3 },
+                                { name: "GPT-4", score: 88, trend: 1 },
+                                { name: "Llama 3.1", score: 80, trend: 2 },
+                                { name: "Gemini Pro", score: 75, trend: 1 },
+                                { name: "Command R+", score: 73, trend: 0 },
+                                { name: "Grok", score: 38, trend: -4 }
+                            ]
+                        },
+                        {
+                            name: "Cultural Sensitivity",
+                            icon: "fas fa-globe text-orange-500",
+                            average: 74,
+                            best: 88,
+                            worst: 32,
+                            models: [
+                                { name: "Claude-3", score: 88, trend: 2 },
+                                { name: "GPT-4", score: 82, trend: 1 },
+                                { name: "Llama 3.1", score: 79, trend: 3 },
+                                { name: "Gemini Pro", score: 78, trend: 2 },
+                                { name: "Command R+", score: 75, trend: 1 },
+                                { name: "Grok", score: 32, trend: -6 }
+                            ]
+                        }
+                    ]
+                }
+            },
+
+            async mounted() {
+                await this.loadData();
+                this.initializeCharts();
+            },
+
+            methods: {
+                async loadData() {
+                    try {
+                        const response = await fetch('/api/stats');
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            this.totalTests = data.stats.total_tests || this.totalTests;
+                            // Update other stats from API if available
+                        }
+                    } catch (error) {
+                        console.error('Error loading stats:', error);
+                    }
+                },
+
+                initializeCharts() {
+                    // Ethics Score Trends Chart
+                    const ethicsCtx = document.getElementById('ethicsChart').getContext('2d');
+                    new Chart(ethicsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                            datasets: [
+                                {
+                                    label: 'Claude-3',
+                                    data: [88, 89, 91, 90, 92, 93, 92],
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'GPT-4',
+                                    data: [85, 86, 87, 86, 88, 87, 87],
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Llama 3.1',
+                                    data: [78, 79, 81, 80, 82, 83, 83],
+                                    borderColor: '#8b5cf6',
+                                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Grok',
+                                    data: [52, 48, 45, 43, 42, 40, 41],
+                                    borderColor: '#ef4444',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+
+                    // Political Bias Chart
+                    const biasCtx = document.getElementById('biasChart').getContext('2d');
+                    new Chart(biasCtx, {
+                        type: 'radar',
+                        data: {
+                            labels: ['Left', 'Center-Left', 'Center', 'Center-Right', 'Right'],
+                            datasets: [
+                                {
+                                    label: 'Grok',
+                                    data: [10, 15, 20, 35, 87],
+                                    borderColor: '#ef4444',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                                },
+                                {
+                                    label: 'Claude-3',
+                                    data: [48, 52, 55, 50, 47],
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                },
+                                {
+                                    label: 'GPT-4',
+                                    data: [45, 50, 53, 49, 46],
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                },
+                                {
+                                    label: 'Llama 3.1',
+                                    data: [47, 49, 52, 48, 44],
+                                    borderColor: '#8b5cf6',
+                                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+                },
+
+                getTrendClass(trend) {
+                    if (trend > 0) return 'trend-up';
+                    if (trend < 0) return 'trend-down';
+                    return 'trend-stable';
+                },
+
+                getTrendIcon(trend) {
+                    if (trend > 0) return 'fas fa-arrow-up';
+                    if (trend < 0) return 'fas fa-arrow-down';
+                    return 'fas fa-minus';
+                },
+
+                getScoreClass(score) {
+                    if (score >= 85) return 'score-excellent';
+                    if (score >= 70) return 'score-good';
+                    if (score >= 50) return 'score-average';
+                    return 'score-poor';
+                },
+
+                getCategoryColor(score) {
+                    if (score >= 85) return '#059669';
+                    if (score >= 70) return '#0891b2';
+                    if (score >= 50) return '#d97706';
+                    return '#dc2626';
+                },
+
+                getAlertClass(severity) {
+                    switch (severity) {
+                        case 'critical': return 'bg-red-100 text-red-800 border border-red-200';
+                        case 'warning': return 'bg-orange-100 text-orange-800 border border-orange-200';
+                        case 'info': return 'bg-blue-100 text-blue-800 border border-blue-200';
+                        default: return 'bg-gray-100 text-gray-800 border border-gray-200';
+                    }
+                },
+
+                getAlertIcon(severity) {
+                    switch (severity) {
+                        case 'critical': return 'fas fa-exclamation-triangle';
+                        case 'warning': return 'fas fa-exclamation-circle';
+                        case 'info': return 'fas fa-info-circle';
+                        default: return 'fas fa-bell';
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

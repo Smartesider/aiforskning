@@ -1,27 +1,27 @@
 #!/bin/bash
 # Startup script for AI Ethics Testing Framework
-# Configured for Docker/Portainer deployment at 172.17.0.8:8020
+# Configured for Docker/Portainer deployment at 172.17.0.8:8010
 
 set -e
 
 echo "🚀 Starting AI Ethics Testing Framework"
 echo "📍 Target IP: 172.17.0.8"
-echo "📍 Port mapping: 8020:80 (host:container)"
+echo "📍 Port mapping: 8010:8010 (host:container)"
 echo "🔧 Current directory: $(pwd)"
 
 # Check if we're in a container
 if [ -f /.dockerenv ]; then
     echo "🐳 Running in Docker container"
-    BIND_ADDRESS="0.0.0.0:80"
+    BIND_ADDRESS="0.0.0.0:8010"
 else
     echo "💻 Running on host system"
-    # Try port 8020 first, fall back to 8022 if occupied
-    if python3 -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', 8020)); s.close()" 2>/dev/null; then
-        BIND_ADDRESS="0.0.0.0:8020"
-        echo "🎯 Port 8020 available - will replace static site"
+    # Try port 8010 first, fall back to 8012 if occupied
+    if python3 -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', 8010)); s.close()" 2>/dev/null; then
+        BIND_ADDRESS="0.0.0.0:8010"
+        echo "🎯 Port 8010 available"
     else
-        BIND_ADDRESS="0.0.0.0:8022"
-        echo "⚠️  Port 8020 occupied - using 8022 (needs proxy setup)"
+        BIND_ADDRESS="0.0.0.0:8012"
+        echo "⚠️  Port 8010 occupied - using 8012 (needs proxy setup)"
     fi
 fi
 

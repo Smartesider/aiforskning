@@ -4,8 +4,18 @@ Core models for the AI Ethics Testing Framework
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from enum import Enum
+import hashlib
+import secrets
+
+
+class UserRole(Enum):
+    """User roles for access control"""
+    VIEWER = "viewer"
+    RESEARCHER = "researcher"
+    ADMIN = "admin"
+    SUPERUSER = "superuser"
 
 
 class EthicalStance(Enum):
@@ -135,6 +145,84 @@ class TestSession:
             'model': self.model,
             'responses': [r.to_dict() for r in self.responses],
             'completion_rate': self.completion_rate
+        }
+
+
+@dataclass
+class User:
+    """User model for authentication and authorization"""
+    id: Optional[int] = None
+    username: str = ""
+    email: str = ""
+    password_hash: str = ""
+    salt: str = ""
+    role: UserRole = UserRole.VIEWER
+    is_active: bool = True
+    created_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    
+    @staticmethod
+    def hash_password(password: str, salt: str = None) -> tuple[str, str]:
+        """Hash password with salt"""
+        if salt is None:
+            salt = secrets.token_hex(32)
+        
+        # Use PBKDF2 with SHA-256
+        password_hash = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt.encode('utf-8'),
+            100000  # 100,000 iterations
+        ).hex()
+        
+        return password_hash, salt
+    
+    def verify_password(self, password: str) -> bool:
+        """Verify password against stored hash"""
+        password_hash, _ = self.hash_password(password, self.salt)
+        return password_hash == self.password_hash
+    
+    def set_password(self, password: str) -> None:
+        """Set password for user (hash and store salt)"""
+        self.password_hash, self.salt = self.hash_password(password)
+    
+    def is_superuser(self) -> bool:
+        """Check if user has superuser privileges"""
+        return self.role == UserRole.SUPERUSER
+    
+    def is_admin(self) -> bool:
+        """Check if user has admin privileges"""
+        return self.role in [UserRole.ADMIN, UserRole.SUPERUSER]
+    
+    def can_edit(self) -> bool:
+        """Check if user can edit data"""
+        return self.role in [UserRole.RESEARCHER, UserRole.ADMIN, UserRole.SUPERUSER]
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'User':
+        """Create User from database row"""
+        return cls(
+            id=data.get('id'),
+            username=data.get('username', ''),
+            email=data.get('email', ''),
+            password_hash=data.get('password_hash', ''),
+            salt=data.get('salt', ''),
+            role=UserRole(data.get('role', 'viewer')),
+            is_active=bool(data.get('is_active', True)),
+            created_at=data.get('created_at'),
+            last_login=data.get('last_login')
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert User to dictionary (excluding sensitive data)"""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'role': self.role.value,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_login': self.last_login.isoformat() if self.last_login else None
         }
 
 

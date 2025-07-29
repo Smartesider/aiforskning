@@ -1,8 +1,26 @@
 {
-  "name": "Copilot CLI DevEnv",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+  "name": "Skyforskning Container",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "skyforskning",
+  "workspaceFolder": "/app",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.analysis.autoSearchPaths": true,
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.linting.mypyEnabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.testing.pytestEnabled": true
+      }
+    }
   },
-  "postCreateCommand": "bash .devcontainer/setup-copilot.sh"
+  "postCreateCommand": "python manage.py migrate && python manage.py collectstatic --noinput",
+  "remoteUser": "django"
 }

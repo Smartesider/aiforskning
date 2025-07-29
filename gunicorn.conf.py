@@ -4,7 +4,7 @@
 import multiprocessing
 
 # Server socket
-bind = "0.0.0.0:80"  # Bind to all interfaces on port 80 (internal container port)
+bind = "0.0.0.0:8010"  # Bind to all interfaces on port 8010
 backlog = 2048
 
 # Worker processes
