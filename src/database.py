@@ -100,6 +100,42 @@ class EthicsDatabase:
                     INDEX idx_users_email (email)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
+            
+            # API keys table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS api_keys (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    provider VARCHAR(50) NOT NULL,
+                    name VARCHAR(100) NOT NULL,
+                    key_value TEXT NOT NULL,
+                    status ENUM('active', 'inactive', 'error') DEFAULT 'inactive',
+                    last_tested TIMESTAMP NULL,
+                    response_time INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_provider_name (provider, name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            
+            # System settings table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS system_settings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    setting_key VARCHAR(100) NOT NULL UNIQUE,
+                    setting_value TEXT NOT NULL,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            
+            # Insert default settings
+            cursor.execute("""
+                INSERT IGNORE INTO system_settings (setting_key, setting_value, description) VALUES
+                ('testing_frequency', '30', 'How often to run LLM tests (in days)'),
+                ('last_test_run', '0', 'Unix timestamp of last test run'),
+                ('enable_change_detection', '1', 'Enable detection of changes in LLM responses')
+            """)
     
     @contextmanager
     def get_connection(self):
@@ -440,6 +476,84 @@ class EthicsDatabase:
                     last_login=row[8]
                 ))
             return users
+    
+    def get_api_keys(self) -> List[Dict[str, Any]]:
+        """Get all API keys from database"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT provider, name, status, last_tested, response_time, created_at
+                FROM api_keys ORDER BY provider, name
+            """)
+            
+            keys = []
+            for row in cursor.fetchall():
+                keys.append({
+                    'provider': row[0],
+                    'name': row[1],
+                    'status': row[2],
+                    'last_tested': row[3].isoformat() if row[3] else None,
+                    'response_time': row[4],
+                    'created_at': row[5].isoformat() if row[5] else None
+                })
+            return keys
+    
+    def save_api_key(self, provider: str, name: str, key_value: str):
+        """Save or update API key"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO api_keys (provider, name, key_value, status)
+                VALUES (%s, %s, %s, 'inactive')
+                ON DUPLICATE KEY UPDATE
+                key_value = VALUES(key_value), updated_at = CURRENT_TIMESTAMP
+            """, (provider, name, key_value))
+    
+    def update_api_key_status(self, provider: str, name: str, status: str, response_time: int = 0):
+        """Update API key test status"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE api_keys 
+                SET status = %s, last_tested = CURRENT_TIMESTAMP, response_time = %s
+                WHERE provider = %s AND name = %s
+            """, (status, response_time, provider, name))
+    
+    def get_setting(self, key: str) -> Optional[str]:
+        """Get system setting value"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT setting_value FROM system_settings WHERE setting_key = %s", (key,))
+            row = cursor.fetchone()
+            return row[0] if row else None
+    
+    def set_setting(self, key: str, value: str, description: str = ""):
+        """Set system setting value"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO system_settings (setting_key, setting_value, description)
+                VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP
+            """, (key, value, description))
+    
+    def should_run_tests(self) -> bool:
+        """Check if enough time has passed since last test run"""
+        frequency_days = int(self.get_setting('testing_frequency') or '30')
+        last_run = int(self.get_setting('last_test_run') or '0')
+        
+        if last_run == 0:
+            return True  # Never run before
+            
+        import time
+        days_since_last = (time.time() - last_run) / (24 * 60 * 60)
+        return days_since_last >= frequency_days
+    
+    def mark_tests_completed(self):
+        """Mark that tests have been completed"""
+        import time
+        self.set_setting('last_test_run', str(int(time.time())))
 
 
 class DilemmaLoader:
@@ -463,3 +577,8 @@ class DilemmaLoader:
         """Get all dilemmas for a specific category"""
         all_dilemmas = DilemmaLoader.load_dilemmas(file_path)
         return [d for d in all_dilemmas if d.category == category]
+
+
+# Global database instance
+# 🧷 Kun MariaDB skal brukes – ingen andre drivere!
+database = EthicsDatabase()
