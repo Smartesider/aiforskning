@@ -144,11 +144,11 @@ class AdminDashboard {
 
     async loadLlmData() {
         try {
-            // Use the correct endpoint from FastAPI backend
-            const llmData = await this.apiCall('/api/v1/llm-status');
-            if (llmData && llmData.models) {
-                this.currentLlms = llmData.models;
-                this.renderLlmGrid(llmData.models);
+            // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+            const llmData = await this.apiCall('/api/v1/llms');
+            if (llmData && llmData.llms) {
+                this.currentLlms = llmData.llms;
+                this.renderLlmGrid(llmData.llms);
             }
         } catch (error) {
             console.error('Failed to load LLM data:', error);
@@ -170,32 +170,38 @@ class AdminDashboard {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>
                         <h3>${llm.name || 'Unknown'}</h3>
-                        <p style="color: var(--gray-600); font-size: 0.9rem;">Last Run: ${llm.lastRun || 'N/A'}</p>
+                        <p style="color: var(--gray-600); font-size: 0.9rem;">Last Test: ${llm.lastTested || 'N/A'}</p>
                     </div>
                     <span class="status-indicator status-${llm.status}">
-                        ${this.getStatusIcon(llm.status)} 
+                        ${llm.statusEmoji || this.getStatusIcon(llm.status)} 
                         ${llm.status.charAt(0).toUpperCase() + llm.status.slice(1)}
                     </span>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
-                        <div style="font-size: 0.8rem; color: var(--gray-600);">Questions Answered</div>
-                        <div style="font-weight: 600;">${llm.questionsAnswered || 0}</div>
+                        <div style="font-size: 0.8rem; color: var(--gray-600);">Tests This Week</div>
+                        <div style="font-weight: 600;">${llm.testsThisWeek || 0}</div>
                     </div>
                     <div>
                         <div style="font-size: 0.8rem; color: var(--gray-600);">Bias Score</div>
                         <div style="font-weight: 600;">${llm.biasScore || 'N/A'}</div>
                     </div>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <div style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 0.25rem;">Status</div>
-                    <div style="font-size: 0.9rem;">${llm.status || 'Unknown'}</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 0.8rem; color: var(--gray-600);">Response Time</div>
+                        <div style="font-weight: 600;">${llm.responseTime || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.8rem; color: var(--gray-600);">Uptime</div>
+                        <div style="font-weight: 600;">${llm.uptime || 'N/A'}</div>
+                    </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-primary" style="font-size: 0.8rem; padding: 0.5rem 1rem;" onclick="testLlm('${llm.name}')">
+                    <button class="btn btn-primary" style="font-size: 0.8rem; padding: 0.5rem 1rem;" onclick="testLlm('${llm.provider}')">
                         🧪 Test Now
                     </button>
-                    <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;" onclick="viewLlmLogs('${llm.name}')">
+                    <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;" onclick="viewLlmLogs('${llm.provider}')">
                         📝 View Details
                     </button>
                 </div>
@@ -630,9 +636,9 @@ function refreshDashboard() {
 
 async function testLlm(provider, model) {
     try {
-        const response = await dashboard.apiCall('/api/llms/test', 'POST', { provider, model });
+        const response = await dashboard.apiCall('/api/v1/llms/test', 'POST', { provider, model });
         if (response) {
-            dashboard.showAlert('success', `${provider} ${model} test completed`);
+            dashboard.showAlert('success', `${provider} test completed - ${response.success ? 'Success' : 'Failed'}`);
             dashboard.loadLlmData();
         }
     } catch (error) {

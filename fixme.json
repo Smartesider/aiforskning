@@ -1,0 +1,197 @@
+{
+  "admin_dashboard_fixes": {
+    "description": "Complete plan to fix all admin dashboard issues",
+    "phases": [
+      {
+        "phase": 1,
+        "title": "Fix Missing API Endpoints for LLM Management",
+        "description": "Add missing endpoints that LLM Management section is trying to call",
+        "tasks": [
+          {
+            "task": "1.1",
+            "description": "Add missing /api/v1/llms/test endpoint for LLM testing",
+            "files_to_modify": ["fastapi_simple.py"],
+            "verification": "Test POST to /api/v1/llms/test with provider and model",
+            "expected_result": "LLM test buttons work without 404 errors"
+          },
+          {
+            "task": "1.2", 
+            "description": "Add /api/v1/llms endpoint to get all LLM data with real database info",
+            "files_to_modify": ["fastapi_simple.py"],
+            "verification": "Test GET to /api/v1/llms returns real data from api_keys table",
+            "expected_result": "LLM Management shows same data as API Keys section"
+          }
+        ]
+      },
+      {
+        "phase": 2,
+        "title": "Fix JavaScript Function Errors",
+        "description": "Fix missing JavaScript functions causing errors",
+        "tasks": [
+          {
+            "task": "2.1",
+            "description": "Add missing closeModal() function to AdminDashboard class",
+            "files_to_modify": ["public_html/admin/js/admin.js"],
+            "verification": "Test modal close functionality",
+            "expected_result": "No 'closeModal is not a function' errors"
+          },
+          {
+            "task": "2.2",
+            "description": "Add missing refreshDashboard() function to AdminDashboard class", 
+            "files_to_modify": ["public_html/admin/js/admin.js"],
+            "verification": "Test dashboard auto-refresh",
+            "expected_result": "No 'refreshDashboard is not a function' errors"
+          },
+          {
+            "task": "2.3",
+            "description": "Fix testLlm function to use correct API endpoint",
+            "files_to_modify": ["public_html/admin/js/admin.js"],
+            "verification": "Test LLM test buttons",
+            "expected_result": "LLM tests work without 404 errors"
+          }
+        ]
+      },
+      {
+        "phase": 3,
+        "title": "Implement Advanced API Key Edit Modal with Model Selection",
+        "description": "Create edit functionality with model selection checkboxes",
+        "tasks": [
+          {
+            "task": "3.1",
+            "description": "Add /api/v1/keys/{provider}/models endpoint to get available models per provider",
+            "files_to_modify": ["fastapi_simple.py"],
+            "verification": "Test GET to /api/v1/keys/OpenAI/models returns model list",
+            "expected_result": "Returns available models for each provider"
+          },
+          {
+            "task": "3.2",
+            "description": "Create edit modal HTML with model selection checkboxes",
+            "files_to_modify": ["public_html/admin/index.html"],
+            "verification": "Click Edit on API key opens modal with model checkboxes",
+            "expected_result": "Modal shows available models with checkboxes"
+          },
+          {
+            "task": "3.3",
+            "description": "Add JavaScript functions for edit modal and model selection",
+            "files_to_modify": ["public_html/admin/js/admin.js"],
+            "verification": "Test edit modal functionality and model selection",
+            "expected_result": "Can select/deselect models and save changes"
+          },
+          {
+            "task": "3.4",
+            "description": "Add /api/v1/keys/{provider}/models/update endpoint to save selected models",
+            "files_to_modify": ["fastapi_simple.py"],
+            "verification": "Test PUT to update selected models",
+            "expected_result": "Selected models are saved to database"
+          }
+        ]
+      },
+      {
+        "phase": 4,
+        "title": "Fix API Key Data Consistency",
+        "description": "Ensure LLM Management and API Keys sections show same data",
+        "tasks": [
+          {
+            "task": "4.1",
+            "description": "Update loadLlmData() to use real database data from api_keys table",
+            "files_to_modify": ["public_html/admin/js/admin.js"],
+            "verification": "Compare LLM Management and API Keys sections",
+            "expected_result": "Both sections show identical data from database"
+          },
+          {
+            "task": "4.2",
+            "description": "Update loadApiKeys() to use real database data",
+            "files_to_modify": ["public_html/admin/js/admin.js"], 
+            "verification": "Check API Keys section shows real data",
+            "expected_result": "API Keys section shows current database keys"
+          },
+          {
+            "task": "4.3",
+            "description": "Add database table for model selections per API key",
+            "files_to_modify": ["fastapi_simple.py"],
+            "verification": "Check database has api_key_models table",
+            "expected_result": "Can store which models are enabled per API key"
+          }
+        ]
+      },
+      {
+        "phase": 5,
+        "title": "Fix API Key Testing Issues",
+        "description": "Fix Gemini and other API key testing failures",
+        "tasks": [
+          {
+            "task": "5.1",
+            "description": "Update LLM tester to handle Gemini API format correctly",
+            "files_to_modify": ["real_llm_tester.py", "fastapi_simple.py"],
+            "verification": "Test Gemini API key validation",
+            "expected_result": "Gemini API key tests successfully"
+          },
+          {
+            "task": "5.2",
+            "description": "Fix API key test endpoints to return proper status",
+            "files_to_modify": ["fastapi_simple.py"],
+            "verification": "Test all API key test buttons",
+            "expected_result": "All API key tests return accurate results"
+          },
+          {
+            "task": "5.3",
+            "description": "Update database with correct API key statuses",
+            "files_to_modify": ["database"],
+            "verification": "Check api_keys table has correct statuses",
+            "expected_result": "Working keys show 'active', broken keys show 'error'"
+          }
+        ]
+      },
+      {
+        "phase": 6,
+        "title": "Update Main Index Page",
+        "description": "Ensure main site uses correct API information",
+        "tasks": [
+          {
+            "task": "6.1",
+            "description": "Check and update /home/skyforskning.no/public_html/index.html",
+            "files_to_modify": ["public_html/index.html"],
+            "verification": "Test main site loads with correct API data",
+            "expected_result": "Main site shows accurate LLM information"
+          },
+          {
+            "task": "6.2",
+            "description": "Ensure main site JavaScript uses correct endpoints",
+            "files_to_modify": ["public_html/js/app.js"],
+            "verification": "Test main site functionality",
+            "expected_result": "Main site works with updated API endpoints"
+          }
+        ]
+      }
+    ],
+    "verification_checklist": {
+      "backend_checks": [
+        "FastAPI server running on port 8010",
+        "All required endpoints exist and respond correctly",
+        "Database connections working",
+        "API keys properly stored and retrieved"
+      ],
+      "frontend_checks": [
+        "No JavaScript errors in console",
+        "All API calls return valid responses", 
+        "LLM Management and API Keys show same data",
+        "Edit modal works with model selection",
+        "All test buttons function correctly"
+      ],
+      "integration_checks": [
+        "Admin dashboard fully functional",
+        "Main site works correctly",
+        "All API keys can be tested accurately",
+        "Model selections save and load properly"
+      ]
+    },
+    "success_criteria": [
+      "Zero 404 errors in admin dashboard",
+      "LLM Management and API Keys sections show identical data",
+      "Edit API key modal with model selection works",
+      "All API key tests return accurate results",
+      "No JavaScript console errors",
+      "Main site functions correctly with updated APIs"
+    ]
+  }
+}
