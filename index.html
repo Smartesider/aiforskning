@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ethics Testing Framework - Landing Page</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <i class="fas fa-shield-alt text-2xl text-blue-600 mr-3"></i>
+                        <h1 class="text-xl font-bold text-gray-800">AI Ethics Framework</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button v-if="!isLoggedIn" @click="showLogin = true" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </button>
+                        <button v-if="isLoggedIn" @click="logout" 
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-20">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <h1 class="text-4xl md:text-6xl font-bold mb-6">AI Ethics Testing Framework</h1>
+                <p class="text-xl md:text-2xl mb-8">Revolutionary AI Bias Detection & Monitoring System</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-6">
+                        <i class="fas fa-brain text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">Comprehensive Analysis</h3>
+                        <p>Real-time monitoring of AI language models across 10 bias categories</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-6">
+                        <i class="fas fa-search text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">Advanced Detection</h3>
+                        <p>150+ sophisticated questions testing political, gender, racial, and cultural bias</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-6">
+                        <i class="fas fa-chart-line text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">Transparent Reporting</h3>
+                        <p>Public dashboard with real AI performance data and bias scores</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Testing Section -->
+        <div class="max-w-7xl mx-auto px-4 py-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">Live AI Bias Testing Dashboard</h2>
+            
+            <!-- Real-time Data Status -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Real-time Data Verification</h3>
+                        <p class="text-sm text-gray-600">Last system update: {{ lastSystemUpdate }}</p>
+                        <p class="text-xs text-green-600">✓ Live data - Updated every 15 minutes</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-green-600">{{ totalTestsToday }}</div>
+                        <div class="text-sm text-gray-600">Tests completed today</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LLM Status Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div v-for="model in llmStatus" :key="model.name" 
+                     class="bg-white rounded-xl shadow-lg p-6 border-l-4"
+                     :class="model.status === 'active' ? 'border-green-500' : 'border-red-500'">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-gray-800">{{ model.name }}</h3>
+                        <span :class="['px-2 py-1 text-xs rounded-full', 
+                                     model.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800']">
+                            {{ model.status }}
+                        </span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Last Run:</span>
+                            <span class="font-medium">{{ model.lastRun }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Questions Answered:</span>
+                            <span class="font-medium">{{ model.questionsAnswered }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Bias Score:</span>
+                            <span :class="['font-medium', getBiasScoreColor(model.biasScore)]">{{ model.biasScore }}/100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Red Flags Detection -->
+            <div v-if="redFlags.length > 0" class="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+                <h3 class="text-lg font-bold text-red-800 mb-4">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Critical Bias Alerts Detected
+                </h3>
+                <ul class="space-y-2">
+                    <li v-for="flag in redFlags" :key="flag.id" class="text-red-700">
+                        <strong>RED FLAG:</strong> {{ flag.model }} returned unwanted information about {{ flag.topic }}: {{ flag.description }}
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Bias Categories -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <div v-for="category in biasCategories" :key="category.id" 
+                     @click="selectedCategory = category.id"
+                     :class="['cursor-pointer p-4 rounded-xl border-2 transition-all', 
+                              selectedCategory === category.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300']">
+                    <div class="text-center">
+                        <i :class="['text-2xl mb-2', category.icon]"></i>
+                        <h3 class="font-semibold text-sm">{{ category.name }}</h3>
+                        <div class="text-xs text-gray-600 mt-1">{{ category.questionCount }} questions</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Question Display -->
+            <div v-if="currentQuestion" class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                <div class="mb-4">
+                    <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                        {{ getCurrentCategoryName() }}
+                    </span>
+                    <span class="ml-2 inline-block bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                        {{ currentQuestion.difficulty }} difficulty
+                    </span>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-4">{{ currentQuestion.question }}</h3>
+                
+                <!-- AI Model Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Test with AI Model:</label>
+                    <select v-model="selectedModel" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select an AI model...</option>
+                        <option v-for="model in availableModels" :key="model.id" :value="model.id">
+                            {{ model.provider }} - {{ model.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Test Button -->
+                <div class="flex justify-between items-center">
+                    <button @click="testQuestion" :disabled="!selectedModel || isLoading"
+                            class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">
+                        <i v-if="isLoading" class="fas fa-spinner fa-spin mr-2"></i>
+                        <i v-else class="fas fa-play mr-2"></i>
+                        {{ isLoading ? 'Testing...' : 'Test AI Response' }}
+                    </button>
+                    <button @click="nextQuestion" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">
+                        <i class="fas fa-forward mr-2"></i>Next Question
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Response -->
+            <div v-if="aiResponse" class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                <h4 class="text-lg font-bold text-gray-800 mb-4">AI Response</h4>
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <p class="text-gray-800">{{ aiResponse.content }}</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <span class="font-semibold text-blue-800">Response Time:</span>
+                        <div class="text-blue-600">{{ aiResponse.responseTime }}ms</div>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <span class="font-semibold text-green-800">Bias Score:</span>
+                        <div class="text-green-600">{{ aiResponse.biasScore }}/10</div>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg">
+                        <span class="font-semibold text-purple-800">Category:</span>
+                        <div class="text-purple-600">{{ aiResponse.detectedBias }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Analytics Section -->
+            <div class="mt-16">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">Advanced AI Ethics Analytics</h2>
+                
+                <!-- Chart 1: Multi-LLM Bias Trend Timeline -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-chart-line text-blue-600 mr-2"></i>Multi-LLM Bias Trend Timeline
+                        </h3>
+                        <div class="text-sm text-gray-600">
+                            Updated every {{ chartUpdateDays }} days | Last update: {{ lastChartUpdate }}
+                        </div>
+                    </div>
+                    
+                    <!-- ✅ Data Validation Warnings -->
+                    <div v-if="dataValidationAlerts.length > 0" class="mb-6">
+                        <!-- Missing Data Alert -->
+                        <div v-if="missingDataModels.length > 0" class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-amber-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-amber-700">
+                                        <strong>⚠️ Data Completeness Notice:</strong> 
+                                        <span v-for="(model, index) in missingDataModels" :key="model">
+                                            Missing data for {{ model }} so user do not think it scores that poorly{{ index < missingDataModels.length - 1 ? ', ' : '.' }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Inconsistency Warning -->
+                        <div v-if="dataInconsistencies.length > 0" class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">
+                                        <strong>🔴 ⚠️ Data Inconsistency Warning:</strong> 
+                                        Large discrepancies detected between charts for: 
+                                        <span v-for="(inc, index) in dataInconsistencies" :key="inc.model">
+                                            {{ inc.model }} (Δ{{ inc.difference.toFixed(1) }}){{ index < dataInconsistencies.length - 1 ? ', ' : '' }}
+                                        </span>
+                                    </p>
+                                    <button @click="showDataInconsistencyDialog = true" class="mt-2 text-xs text-red-600 hover:text-red-800 underline">
+                                        Show details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Validation Alerts -->
+                        <div v-for="(alert, index) in additionalValidationAlerts" :key="index" 
+                             :class="[
+                                 'border-l-4 p-4 mb-2',
+                                 alert.type === 'error' ? 'bg-red-50 border-red-400' : 
+                                 alert.type === 'warning' ? 'bg-amber-50 border-amber-400' : 
+                                 'bg-blue-50 border-blue-400'
+                             ]">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i :class="[
+                                        'fas',
+                                        alert.type === 'error' ? 'fa-times-circle text-red-400' :
+                                        alert.type === 'warning' ? 'fa-exclamation-triangle text-amber-400' :
+                                        'fa-info-circle text-blue-400'
+                                    ]"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p :class="[
+                                        'text-sm',
+                                        alert.type === 'error' ? 'text-red-700' :
+                                        alert.type === 'warning' ? 'text-amber-700' :
+                                        'text-blue-700'
+                                    ]">
+                                        {{ alert.message }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="h-80">
+                        <canvas id="biasTimelineChart" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span v-for="model in chartData.models" :key="model.name" 
+                              :class="[
+                                  'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-opacity',
+                                  missingDataModels.includes(model.name) ? 'opacity-50' : 'opacity-100',
+                                  dataInconsistencies.some(inc => inc.model === model.name) ? 'ring-2 ring-red-400' : ''
+                              ]"
+                              :style="`background-color: ${model.color}20; color: ${model.color}`">
+                            <span class="w-2 h-2 rounded-full mr-2" 
+                                  :style="`background-color: ${dataInconsistencies.some(inc => inc.model === model.name) ? '#ef4444' : model.color}`"></span>
+                            {{ model.name }}
+                            <i v-if="missingDataModels.includes(model.name)" 
+                               class="fas fa-exclamation-triangle text-amber-500 ml-1 text-xs" 
+                               title="Missing data for this model so user do not think it scores that poorly"></i>
+                            <span v-if="dataInconsistencies.some(inc => inc.model === model.name)" 
+                                  class="ml-1 text-red-500 text-xs">(⚠️)</span>
+                        </span>
+                    </div>
+                    
+                    <!-- ✅ Data Validation Legend -->
+                    <div v-if="dataValidationAlerts.length > 0" class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="text-xs text-gray-600 mb-2 font-medium">Chart Legend:</div>
+                        <div class="flex flex-wrap gap-4 text-xs">
+                            <div class="flex items-center">
+                                <div class="w-4 h-0.5 bg-blue-500 mr-2"></div>
+                                <span>Normal data</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-0.5 bg-blue-300 mr-2" style="border-style: dashed; border-width: 0 0 1px 0;"></div>
+                                <span>Missing data</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                                <span>Data inconsistency</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                                <span>Incomplete information</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Individual LLM Deep Dive Dashboard -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-microscope text-purple-600 mr-2"></i>Individual LLM Deep Dive
+                        </h3>
+                        <select v-model="selectedLLMForDeepDive" @change="loadLLMDeepDive" 
+                                class="px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Select LLM for analysis...</option>
+                            <option v-for="model in availableModels" :key="model.id" :value="model.id">
+                                {{ model.provider }} - {{ model.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div v-if="selectedLLMForDeepDive" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-blue-800 mb-2">Response Time Trend</h4>
+                            <canvas :id="`responseTimeChart_${selectedLLMForDeepDive}`" class="w-full h-32"></canvas>
+                        </div>
+                        <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-green-800 mb-2">Bias Score Evolution</h4>
+                            <canvas :id="`biasScoreChart_${selectedLLMForDeepDive}`" class="w-full h-32"></canvas>
+                        </div>
+                        <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-purple-800 mb-2">Category Breakdown</h4>
+                            <canvas :id="`categoryChart_${selectedLLMForDeepDive}`" class="w-full h-32"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Ethical Drift Detection Heatmap -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-thermometer-half text-red-600 mr-2"></i>Ethical Drift Detection Heatmap
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <div class="min-w-full">
+                            <div class="grid grid-cols-1 gap-2">
+                                <div v-for="category in biasCategories" :key="category.id" class="flex items-center">
+                                    <div class="w-40 text-sm font-medium text-gray-700 pr-4">{{ category.name }}</div>
+                                    <div class="flex-1 flex">
+                                        <div v-for="week in driftData[category.id] || []" :key="week.week"
+                                             :class="['w-8 h-8 mr-1 rounded', getDriftColor(week.drift)]"
+                                             :title="`Week ${week.week}: ${week.drift}% drift`">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center text-xs text-gray-600">
+                                <span class="mr-4">Drift Level:</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-4 h-4 bg-green-200 rounded"></div><span>Low (0-25%)</span>
+                                    <div class="w-4 h-4 bg-yellow-300 rounded"></div><span>Medium (26-50%)</span>
+                                    <div class="w-4 h-4 bg-orange-400 rounded"></div><span>High (51-75%)</span>
+                                    <div class="w-4 h-4 bg-red-500 rounded"></div><span>Critical (76-100%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Category-Specific Performance Radar Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-radar text-indigo-600 mr-2"></i>Category-Specific Performance Radar
+                    </h3>
+                    
+                    <!-- ✅ Radar Chart Validation Warnings -->
+                    <div v-if="radarValidationAlerts.length > 0" class="mb-6">
+                        <div v-for="(alert, index) in radarValidationAlerts" :key="index" 
+                             :class="[
+                                 'border-l-4 p-4 mb-2',
+                                 alert.type === 'error' ? 'bg-red-50 border-red-400' : 
+                                 alert.type === 'warning' ? 'bg-amber-50 border-amber-400' : 
+                                 'bg-blue-50 border-blue-400'
+                             ]">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i :class="[
+                                        'fas',
+                                        alert.type === 'error' ? 'fa-times-circle text-red-400' :
+                                        alert.type === 'warning' ? 'fa-exclamation-triangle text-amber-400' :
+                                        'fa-info-circle text-blue-400'
+                                    ]"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p :class="[
+                                        'text-sm',
+                                        alert.type === 'error' ? 'text-red-700' :
+                                        alert.type === 'warning' ? 'text-amber-700' :
+                                        'text-blue-700'
+                                    ]">
+                                        {{ alert.message }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="h-80">
+                            <canvas id="radarChart" class="w-full h-full"></canvas>
+                        </div>
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-gray-800">Model Comparison</h4>
+                            <div v-for="model in radarChartData.models" :key="model.name" 
+                                 :class="[
+                                     'flex items-center justify-between p-3 rounded-lg transition-opacity',
+                                     missingDataModels.includes(model.name) ? 'bg-gray-50 opacity-50' : 'bg-gray-50',
+                                     dataInconsistencies.some(inc => inc.model === model.name) ? 'border-2 border-red-200' : ''
+                                 ]">
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 rounded-full mr-3" :style="`background-color: ${model.color}`"></div>
+                                    <span class="font-medium">{{ model.name }}</span>
+                                    <i v-if="missingDataModels.includes(model.name)" 
+                                       class="fas fa-exclamation-triangle text-amber-500 ml-2 text-sm" 
+                                       title="Missing data for this model so user do not think it scores that poorly"></i>
+                                    <span v-if="dataInconsistencies.some(inc => inc.model === model.name)" 
+                                          class="ml-2 text-xs text-red-600 font-medium">(⚠️ Inconsistent)</span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Avg Score: {{ model.avgScore }}/100
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 5: Startup vs Current Position Drift Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-exchange-alt text-orange-600 mr-2"></i>Startup vs Current Position Drift
+                    </h3>
+                    <div class="h-80">
+                        <canvas id="driftComparisonChart" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                            <span>Improved ({{ driftStats.improved }} models)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                            <span>Degraded ({{ driftStats.degraded }} models)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                            <span>Unstable ({{ driftStats.unstable }} models)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 7: Ethical Consistency Rolling Average -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-balance-scale text-teal-600 mr-2"></i>Ethical Consistency Rolling Average
+                    </h3>
+                    <div class="h-80">
+                        <canvas id="consistencyChart" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-600">
+                        30-day rolling average of consistency scores (how often models give consistent answers to similar questions)
+                    </div>
+                </div>
+
+                <!-- Chart 8: Red Flag Frequency Histogram -->
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-flag text-red-600 mr-2"></i>Red Flag Frequency Analysis
+                    </h3>
+                    <div class="h-80">
+                        <canvas id="redFlagChart" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                        <div v-for="category in biasCategories.slice(0,5)" :key="category.id" 
+                             class="flex items-center">
+                            <div class="w-3 h-3 rounded mr-1" :class="category.icon.split(' ')[2]"></div>
+                            <span>{{ category.name }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Section -->
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-newspaper text-blue-600 mr-2"></i>Latest News & Updates
+                </h3>
+                <div v-if="news.length === 0" class="text-gray-600 text-center py-8">
+                    No news available at this time.
+                </div>
+                <div v-else class="space-y-4">
+                    <article v-for="article in news" :key="article.id" 
+                             class="border-l-4 border-blue-500 pl-4 py-2">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-semibold text-gray-800">{{ article.title }}</h4>
+                            <span class="text-sm text-gray-500">{{ formatDate(article.date) }}</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-2">{{ article.content }}</p>
+                        <div v-if="article.category" class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                            {{ article.category }}
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <!-- Ko-fi Support Section -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-lg p-8 mb-8 border-2 border-purple-200">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-purple-800 mb-2">
+                        <i class="fas fa-heart text-red-500 mr-2"></i>Support Our Research
+                    </h3>
+                    <p class="text-purple-700">Help us continue monitoring AI ethics and bias detection</p>
+                    <a href="https://ko-fi.com/skyforskning" target="_blank" 
+                       class="inline-block mt-4 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-coffee mr-2"></i>Support on Ko-fi
+                    </a>
+                </div>
+                <iframe id='kofiframe' 
+                        src='https://ko-fi.com/skyforskning/?hidefeed=true&widget=true&embed=true&preview=true' 
+                        style='border:none;width:100%;padding:4px;background:#f9f9f9;' 
+                        height='712' 
+                        title='skyforskning'>
+                </iframe>
+            </div>
+        </div>
+
+        <!-- Data Verification Badge -->
+        <div class="bg-white border-t-2 border-gray-200 py-4">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex items-center justify-center space-x-4">
+                    <div v-if="dataVerification.status === 'verified_real_data'" 
+                         class="flex items-center bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                        <i class="fas fa-shield-check text-green-600 mr-2"></i>
+                        <span class="text-green-800 font-medium">Verified Real Data</span>
+                        <span class="text-green-600 text-sm ml-2">ID: {{ dataVerification.hash }}</span>
+                    </div>
+                    <div v-else-if="dataVerification.status === 'loading'" 
+                         class="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                        <i class="fas fa-spinner fa-spin text-blue-600 mr-2"></i>
+                        <span class="text-blue-800 font-medium">Verifying Data...</span>
+                    </div>
+                    <div v-else 
+                         class="flex items-center bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                        <span class="text-yellow-800 font-medium">No Recent Test Data</span>
+                    </div>
+                    
+                    <div v-if="dataVerification.summary.total_responses" 
+                         class="text-sm text-gray-600 hidden md:block">
+                        <span class="font-medium">{{ dataVerification.summary.total_responses }}</span> responses from 
+                        <span class="font-medium">{{ dataVerification.summary.unique_models }}</span> models
+                    </div>
+                    
+                    <div v-if="dataVerification.verified_at" 
+                         class="text-xs text-gray-500 hidden lg:block">
+                        Verified: {{ new Date(dataVerification.verified_at).toLocaleString() }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ Data Inconsistency Detail Dialog -->
+        <div v-if="showDataInconsistencyDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                        Data Inconsistency Details
+                    </h3>
+                    <button @click="showDataInconsistencyDialog = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-red-800 mb-2">Score Inconsistencies Detected</h4>
+                        <p class="text-sm text-red-700 mb-4">
+                            Large discrepancies between timeline and radar chart scores may indicate data quality issues or incomplete information.
+                        </p>
+                        
+                        <div class="space-y-3">
+                            <div v-for="inconsistency in dataInconsistencies" :key="inconsistency.model" 
+                                 class="bg-white border border-red-200 rounded p-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-800">{{ inconsistency.model }}</span>
+                                    <span class="text-sm text-red-600 font-bold">Δ{{ inconsistency.difference.toFixed(1) }}</span>
+                                </div>
+                                <div class="mt-2 text-sm text-gray-600">
+                                    <div class="flex justify-between">
+                                        <span>Timeline Score:</span>
+                                        <span class="font-medium">{{ inconsistency.timelineScore.toFixed(1) }}%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Radar Average:</span>
+                                        <span class="font-medium">{{ inconsistency.radarScore.toFixed(1) }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-800 mb-2">What This Means</h4>
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            <li>• Timeline shows recent bias scores from latest tests</li>
+                            <li>• Radar shows average scores across multiple categories</li>
+                            <li>• Large differences may indicate incomplete data or evolving model behavior</li>
+                            <li>• Consider the "Missing data" warnings for affected models</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-amber-800 mb-2">All Validation Alerts</h4>
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            <div v-for="(alert, index) in dataValidationAlerts" :key="index" 
+                                 class="text-sm p-2 rounded"
+                                 :class="{
+                                     'bg-red-100 text-red-700': alert.type === 'error',
+                                     'bg-amber-100 text-amber-700': alert.type === 'warning',
+                                     'bg-blue-100 text-blue-700': alert.type === 'info'
+                                 }">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                {{ alert.message }}
+                                <span v-if="alert.chart" class="text-xs opacity-75 ml-2">[{{ alert.chart }}]</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button @click="showDataInconsistencyDialog = false" 
+                            class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information Footer -->
+        <footer class="bg-gray-800 text-white py-12 mt-16">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">AI Ethics Framework</h4>
+                        <p class="text-gray-300">Monitoring and analyzing ethical decision-making patterns across AI models.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Contact Information</h4>
+                        <div class="space-y-2 text-gray-300">
+                            <p><i class="fas fa-globe mr-2"></i><a href="http://smartesider.no/" class="hover:text-blue-400">smartesider.no</a></p>
+                            <p><i class="fas fa-building mr-2"></i>Kompetanseutleie AS</p>
+                            <p><i class="fas fa-phone mr-2"></i><a href="tel:+4769020071" class="hover:text-blue-400">+47 69 02 00 71</a></p>
+                            <p><i class="fas fa-envelope mr-2"></i><a href="mailto:terje@trollhagen.no" class="hover:text-blue-400">terje@trollhagen.no</a></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Support Our Work</h4>
+                        <p class="text-gray-300 mb-4">Help us continue this important research</p>
+                        <a href="https://ko-fi.com/skyforskning" target="_blank" 
+                           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-donate mr-2"></i>Donations: Ko-fi
+                        </a>
+                    </div>
+                </div>
+                <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                    <p>&copy; 2025 AI Ethics Framework. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Login Modal -->
+        <div v-if="showLogin" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Login</h3>
+                    <button @click="showLogin = false" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form @submit.prevent="login">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                        <input v-model="loginForm.username" type="text" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input v-model="loginForm.password" type="password" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" @click="showLogin = false" 
+                                class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                        <button type="submit" :disabled="isLoggingIn"
+                                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg">
+                            {{ isLoggingIn ? 'Logging in...' : 'Login' }}
+                        </button>
+                    </div>
+                </form>
+                <div v-if="loginError" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-red-800 text-sm">{{ loginError }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    isLoggedIn: false,
+                    showLogin: false,
+                    isLoggingIn: false,
+                    loginError: '',
+                    loginForm: {
+                        username: '',
+                        password: ''
+                    },
+                    selectedCategory: 'political_bias',
+                    selectedModel: '',
+                    currentQuestion: null,
+                    aiResponse: null,
+                    isLoading: false,
+                    lastSystemUpdate: '',
+                    totalTestsToday: 0,
+                    // Real LLM status data
+                    llmStatus: [],
+                    redFlags: [],
+                    // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                    biasCategories: [
+                        { id: 'political_bias', name: 'Political Bias', icon: 'fas fa-vote-yea text-red-600', questionCount: 15 },
+                        { id: 'gender_bias', name: 'Gender Bias', icon: 'fas fa-venus-mars text-pink-600', questionCount: 15 },
+                        { id: 'racial_ethnic_bias', name: 'Racial/Ethnic Bias', icon: 'fas fa-users text-orange-600', questionCount: 15 },
+                        { id: 'religious_bias', name: 'Religious Bias', icon: 'fas fa-pray text-purple-600', questionCount: 15 },
+                        { id: 'economic_class_bias', name: 'Economic Class Bias', icon: 'fas fa-coins text-yellow-600', questionCount: 15 },
+                        { id: 'lgbtq_rights', name: 'LGBTQ+ Rights', icon: 'fas fa-rainbow text-indigo-600', questionCount: 15 },
+                        { id: 'age_bias', name: 'Age Bias', icon: 'fas fa-clock text-green-600', questionCount: 15 },
+                        { id: 'disability_bias', name: 'Disability Bias', icon: 'fas fa-wheelchair text-blue-600', questionCount: 15 },
+                        { id: 'cultural_national_bias', name: 'Cultural/National Bias', icon: 'fas fa-globe text-teal-600', questionCount: 15 },
+                        { id: 'authoritarian_tendencies', name: 'Authoritarian Tendencies', icon: 'fas fa-gavel text-gray-600', questionCount: 15 }
+                    ],
+                    availableModels: [],
+                    questions: [],
+                    // Chart-related data
+                    chartUpdateDays: 7,
+                    lastChartUpdate: new Date().toLocaleDateString(),
+                    selectedLLMForDeepDive: '',
+                    chartData: {
+                        models: [],
+                        timeline: []
+                    },
+                    
+                    // Data verification
+                    dataVerification: {
+                        status: 'loading',
+                        hash: '',
+                        summary: {},
+                        verified_at: null
+                    },
+                    driftData: {},
+                    radarChartData: {
+                        models: []
+                    },
+                    driftStats: {
+                        improved: 0,
+                        degraded: 0,
+                        unstable: 0
+                    },
+                    news: [],
+                    charts: {},
+                    
+                    // ✅ Data validation properties
+                    dataValidationAlerts: [],
+                    additionalValidationAlerts: [],
+                    radarValidationAlerts: [],
+                    missingDataModels: [],
+                    dataInconsistencies: [],
+                    showDataInconsistencyDialog: false
+                }
+            },
+            mounted() {
+                this.checkAuthStatus();
+                this.loadAvailableModels();
+                this.loadQuestions();
+                this.loadRandomQuestion();
+                this.loadSystemStatus();
+                this.loadLLMStatus();
+                this.loadRedFlags();
+                this.loadChartData();
+                this.loadNews();
+                this.loadDataVerification();
+                // Update data every 5 minutes
+                setInterval(() => {
+                    this.loadSystemStatus();
+                    this.loadLLMStatus();
+                    this.loadRedFlags();
+                    this.loadDataVerification();
+                }, 300000);
+                // Update charts based on admin setting
+                setInterval(() => {
+                    this.loadChartData();
+                }, this.chartUpdateDays * 24 * 60 * 60 * 1000);
+            },
+            methods: {
+                async checkAuthStatus() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/auth/status');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.isLoggedIn = data.authenticated;
+                        }
+                    } catch (error) {
+                        console.error('Auth status check failed:', error);
+                    }
+                },
+                async login() {
+                    this.isLoggingIn = true;
+                    this.loginError = '';
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.loginForm)
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            this.isLoggedIn = true;
+                            this.showLogin = false;
+                            this.loginForm = { username: '', password: '' };
+                            // Redirect to appropriate dashboard
+                            if (data.role === 'admin') {
+                                window.location.href = '/admin/';
+                            } else {
+                                window.location.href = '/bruker/';
+                            }
+                        } else {
+                            this.loginError = data.message || 'Login failed';
+                        }
+                    } catch (error) {
+                        this.loginError = 'Network error occurred';
+                        console.error('Login error:', error);
+                    } finally {
+                        this.isLoggingIn = false;
+                    }
+                },
+                async logout() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        await fetch('/api/auth/logout', { method: 'POST' });
+                        this.isLoggedIn = false;
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+                },
+                async loadAvailableModels() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/available-models');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.availableModels = data.models || [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load models:', error);
+                    }
+                },
+                async loadQuestions() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/questions');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.questions = data.questions || [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load questions:', error);
+                    }
+                },
+                loadRandomQuestion() {
+                    const categoryQuestions = this.questions.filter(q => q.category === this.selectedCategory);
+                    if (categoryQuestions.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * categoryQuestions.length);
+                        this.currentQuestion = categoryQuestions[randomIndex];
+                    }
+                },
+                nextQuestion() {
+                    this.loadRandomQuestion();
+                    this.aiResponse = null;
+                },
+                getCurrentCategoryName() {
+                    const category = this.biasCategories.find(c => c.id === this.selectedCategory);
+                    return category ? category.name : 'Unknown Category';
+                },
+                async testQuestion() {
+                    if (!this.selectedModel || !this.currentQuestion) return;
+                    
+                    this.isLoading = true;
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/test-bias', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                question_id: this.currentQuestion.id,
+                                model_id: this.selectedModel,
+                                question_text: this.currentQuestion.question
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.aiResponse = data;
+                        } else {
+                            console.error('Test failed:', response.statusText);
+                        }
+                    } catch (error) {
+                        console.error('Test error:', error);
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+                getBiasScoreColor(score) {
+                    if (score >= 80) return 'text-green-600';
+                    if (score >= 60) return 'text-yellow-600';
+                    return 'text-red-600';
+                },
+                async loadSystemStatus() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/system-status');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.lastSystemUpdate = new Date(data.lastUpdate).toLocaleString();
+                            this.totalTestsToday = data.testsToday || 0;
+                        }
+                    } catch (error) {
+                        console.error('Failed to load system status:', error);
+                    }
+                },
+                async loadLLMStatus() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/llm-status');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.llmStatus = data.models || [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load LLM status:', error);
+                    }
+                },
+                async loadRedFlags() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/red-flags');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.redFlags = data.flags || [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load red flags:', error);
+                    }
+                },
+
+                // Chart data loading methods
+                async loadChartData() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/chart-data');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.chartData = data.timeline || { models: [], timeline: [] };
+                            this.driftData = data.drift || {};
+                            this.radarChartData = data.radar || { models: [] };
+                            this.driftStats = data.driftStats || { improved: 0, degraded: 0, unstable: 0 };
+                            this.chartUpdateDays = data.updateInterval || 7;
+                            
+                            // ✅ VALIDATION: Check data completeness and consistency before plotting
+                            this.validateAndProcessChartData();
+                            
+                            // Initialize charts after data validation
+                            this.$nextTick(() => {
+                                this.initializeCharts();
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Failed to load chart data:', error);
+                        this.showDataError('Failed to load chart data from API');
+                    }
+                },
+
+                validateAndProcessChartData() {
+                    // Reset validation alerts
+                    this.dataValidationAlerts = [];
+                    this.additionalValidationAlerts = [];
+                    this.radarValidationAlerts = [];
+                    this.missingDataModels = [];
+                    this.dataInconsistencies = [];
+                    
+                    // ✅ VALIDATION 1: Check for missing data in timeline
+                    this.validateTimelineData();
+                    
+                    // ✅ VALIDATION 2: Check for missing data in radar chart
+                    this.validateRadarData();
+                    
+                    // ✅ VALIDATION 3: Cross-check inconsistencies between charts
+                    this.crossCheckDataConsistency();
+                    
+                    // ✅ VALIDATION 4: Check drift data completeness
+                    this.validateDriftData();
+                    
+                    // ✅ VALIDATION 5: Separate alerts by type and chart
+                    this.categorizeValidationAlerts();
+                    
+                    // Display validation results
+                    this.displayValidationResults();
+                },
+
+                validateTimelineData() {
+                    if (!this.chartData.models || this.chartData.models.length === 0) {
+                        this.dataValidationAlerts.push({
+                            type: 'error',
+                            message: 'No LLM models found in timeline data'
+                        });
+                        return;
+                    }
+                    
+                    // Check each model for complete data
+                    this.chartData.models.forEach(model => {
+                        const modelName = model.name;
+                        
+                        // Check for missing bias scores
+                        if (!model.biasScores || model.biasScores.length === 0) {
+                            this.missingDataModels.push(modelName);
+                            this.dataValidationAlerts.push({
+                                type: 'warning',
+                                message: `Missing data for ${modelName} so user do not think it scores that poorly.`,
+                                model: modelName,
+                                chart: 'timeline'
+                            });
+                        }
+                        
+                        // Check for incomplete time series data
+                        if (model.biasScores && model.biasScores.length < 7) {
+                            this.dataValidationAlerts.push({
+                                type: 'info',
+                                message: `Incomplete time series for ${modelName} (${model.biasScores.length}/7 days)`,
+                                model: modelName,
+                                chart: 'timeline'
+                            });
+                        }
+                        
+                        // Check for suspiciously uniform data (might indicate missing real data)
+                        if (model.biasScores && model.biasScores.length > 1) {
+                            const allSame = model.biasScores.every(score => score === model.biasScores[0]);
+                            if (allSame) {
+                                this.dataValidationAlerts.push({
+                                    type: 'warning',
+                                    message: `Uniform scores detected for ${modelName} - data may be incomplete`,
+                                    model: modelName,
+                                    chart: 'timeline'
+                                });
+                            }
+                        }
+                    });
+                },
+
+                validateRadarData() {
+                    if (!this.radarChartData.models || this.radarChartData.models.length === 0) {
+                        this.dataValidationAlerts.push({
+                            type: 'error',
+                            message: 'No LLM models found in radar chart data'
+                        });
+                        return;
+                    }
+                    
+                    // Expected number of categories (based on your bias categories)
+                    const expectedCategories = 10;
+                    
+                    this.radarChartData.models.forEach(model => {
+                        const modelName = model.name;
+                        
+                        // Check for missing radar scores
+                        if (!model.scores || model.scores.length === 0) {
+                            if (!this.missingDataModels.includes(modelName)) {
+                                this.missingDataModels.push(modelName);
+                            }
+                            this.dataValidationAlerts.push({
+                                type: 'warning',
+                                message: `Missing data for ${modelName} so user do not think it scores that poorly.`,
+                                model: modelName,
+                                chart: 'radar'
+                            });
+                        }
+                        
+                        // Check for incomplete category coverage
+                        if (model.scores && model.scores.length < expectedCategories) {
+                            this.dataValidationAlerts.push({
+                                type: 'info',
+                                message: `Incomplete category data for ${modelName} (${model.scores.length}/${expectedCategories} categories)`,
+                                model: modelName,
+                                chart: 'radar'
+                            });
+                        }
+                        
+                        // Check for invalid scores
+                        if (model.scores) {
+                            const invalidScores = model.scores.filter(score => score < 0 || score > 100 || isNaN(score));
+                            if (invalidScores.length > 0) {
+                                this.dataValidationAlerts.push({
+                                    type: 'error',
+                                    message: `Invalid scores detected for ${modelName} in radar chart`,
+                                    model: modelName,
+                                    chart: 'radar'
+                                });
+                            }
+                        }
+                    });
+                },
+
+                crossCheckDataConsistency() {
+                    // Get models from both charts
+                    const timelineModels = this.chartData.models.map(m => m.name);
+                    const radarModels = this.radarChartData.models.map(m => m.name);
+                    
+                    // Check for models missing in one chart but present in another
+                    const missingInRadar = timelineModels.filter(name => !radarModels.includes(name));
+                    const missingInTimeline = radarModels.filter(name => !timelineModels.includes(name));
+                    
+                    if (missingInRadar.length > 0) {
+                        this.dataValidationAlerts.push({
+                            type: 'warning',
+                            message: `Models missing in radar chart: ${missingInRadar.join(', ')}`,
+                            inconsistency: true
+                        });
+                    }
+                    
+                    if (missingInTimeline.length > 0) {
+                        this.dataValidationAlerts.push({
+                            type: 'warning',
+                            message: `Models missing in timeline chart: ${missingInTimeline.join(', ')}`,
+                            inconsistency: true
+                        });
+                    }
+                    
+                    // Cross-check scores for consistency (compare latest bias score with average radar score)
+                    const commonModels = timelineModels.filter(name => radarModels.includes(name));
+                    
+                    commonModels.forEach(modelName => {
+                        const timelineModel = this.chartData.models.find(m => m.name === modelName);
+                        const radarModel = this.radarChartData.models.find(m => m.name === modelName);
+                        
+                        if (timelineModel && radarModel && timelineModel.biasScores && radarModel.avgScore) {
+                            const latestTimelineScore = timelineModel.biasScores[timelineModel.biasScores.length - 1];
+                            const avgRadarScore = radarModel.avgScore;
+                            
+                            // Check for large discrepancies (>30 points difference)
+                            const scoreDifference = Math.abs(latestTimelineScore - avgRadarScore);
+                            if (scoreDifference > 30) {
+                                this.dataInconsistencies.push({
+                                    model: modelName,
+                                    timelineScore: latestTimelineScore,
+                                    radarScore: avgRadarScore,
+                                    difference: scoreDifference
+                                });
+                                
+                                this.dataValidationAlerts.push({
+                                    type: 'error',
+                                    message: `⚠️ Large score inconsistency for ${modelName}: Timeline=${latestTimelineScore.toFixed(1)}, Radar=${avgRadarScore.toFixed(1)} (Δ${scoreDifference.toFixed(1)})`,
+                                    model: modelName,
+                                    inconsistency: true,
+                                    severe: true
+                                });
+                            }
+                        }
+                    });
+                },
+
+                categorizeValidationAlerts() {
+                    // Separate alerts by chart type for better UI organization
+                    this.dataValidationAlerts.forEach(alert => {
+                        if (alert.chart === 'radar') {
+                            this.radarValidationAlerts.push(alert);
+                        } else if (alert.chart !== 'timeline') {
+                            this.additionalValidationAlerts.push(alert);
+                        }
+                    });
+                    
+                    // Keep only timeline alerts in main dataValidationAlerts
+                    this.dataValidationAlerts = this.dataValidationAlerts.filter(
+                        alert => alert.chart === 'timeline' || !alert.chart
+                    );
+                },
+
+                validateDriftData() {
+                    const expectedCategories = ['political_bias', 'gender_bias', 'racial_ethnic_bias', 'religious_bias', 
+                                              'economic_class_bias', 'lgbtq_rights', 'age_bias', 'disability_bias', 
+                                              'cultural_national_bias', 'authoritarian_tendencies'];
+                    
+                    expectedCategories.forEach(category => {
+                        if (!this.driftData[category] || this.driftData[category].length === 0) {
+                            this.dataValidationAlerts.push({
+                                type: 'info',
+                                message: `Missing drift data for category: ${category.replace('_', ' ')}`,
+                                chart: 'drift'
+                            });
+                        }
+                    });
+                },
+
+                displayValidationResults() {
+                    // Clear any existing validation UI elements
+                    this.clearValidationDisplay();
+                    
+                    // Show missing data alerts for each model
+                    if (this.missingDataModels.length > 0) {
+                        this.showMissingDataAlert();
+                    }
+                    
+                    // Show inconsistency warnings
+                    if (this.dataInconsistencies.length > 0) {
+                        this.showInconsistencyWarning();
+                    }
+                    
+                    // Log all validation alerts to console for debugging
+                    console.log('Data Validation Results:', {
+                        alerts: this.dataValidationAlerts,
+                        missingDataModels: this.missingDataModels,
+                        inconsistencies: this.dataInconsistencies
+                    });
+                },
+
+                showMissingDataAlert() {
+                    // Create visual indicator for missing data
+                    this.missingDataModels.forEach(modelName => {
+                        // This will be used by the chart rendering functions
+                        console.warn(`Missing data for ${modelName} so user do not think it scores that poorly.`);
+                    });
+                },
+
+                showInconsistencyWarning() {
+                    if (this.dataInconsistencies.length > 0) {
+                        // Create a visible warning in the UI
+                        const severeInconsistencies = this.dataInconsistencies.filter(inc => 
+                            this.dataValidationAlerts.some(alert => 
+                                alert.model === inc.model && alert.severe
+                            )
+                        );
+                        
+                        if (severeInconsistencies.length > 0) {
+                            // This will trigger UI warning display
+                            this.showDataInconsistencyDialog = true;
+                        }
+                    }
+                },
+
+                clearValidationDisplay() {
+                    // Reset validation display states
+                    this.showDataInconsistencyDialog = false;
+                },
+
+                showDataError(message) {
+                    console.error('Data Error:', message);
+                    this.dataValidationAlerts.push({
+                        type: 'error',
+                        message: message,
+                        timestamp: new Date().toLocaleString()
+                    });
+                },
+
+                async loadDataVerification() {
+                    try {
+                        const response = await fetch('/api/data-verification');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.dataVerification = data;
+                        }
+                    } catch (error) {
+                        console.error('Failed to load data verification:', error);
+                        this.dataVerification.status = 'error';
+                    }
+                },
+
+                async loadNews() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('/api/news');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.news = data.news || [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load news:', error);
+                    }
+                },
+
+                async loadLLMDeepDive() {
+                    if (!this.selectedLLMForDeepDive) return;
+                    
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch(`/api/llm-deep-dive/${this.selectedLLMForDeepDive}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.$nextTick(() => {
+                                this.createDeepDiveCharts(data);
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Failed to load LLM deep dive data:', error);
+                    }
+                },
+
+                // Chart creation methods
+                initializeCharts() {
+                    this.createBiasTimelineChart();
+                    this.createDriftComparisonChart();
+                    this.createRadarChart();
+                    this.createConsistencyChart();
+                    this.createRedFlagChart();
+                },
+
+                createBiasTimelineChart() {
+                    const ctx = document.getElementById('biasTimelineChart');
+                    if (!ctx || !this.chartData.models.length) return;
+
+                    if (this.charts.biasTimeline) {
+                        this.charts.biasTimeline.destroy();
+                    }
+
+                    // ✅ Filter and mark datasets based on data validation
+                    const datasets = this.chartData.models.map(model => {
+                        const isMissingData = this.missingDataModels.includes(model.name);
+                        const hasInconsistency = this.dataInconsistencies.some(inc => inc.model === model.name);
+                        
+                        return {
+                            label: model.name,
+                            data: model.biasScores || [],
+                            borderColor: isMissingData ? model.color + '60' : (hasInconsistency ? '#ef4444' : model.color),
+                            backgroundColor: isMissingData ? model.color + '10' : (hasInconsistency ? '#ef444420' : model.color + '20'),
+                            tension: 0.4,
+                            fill: false,
+                            borderDash: isMissingData ? [8, 4] : [],
+                            borderWidth: isMissingData ? 2 : (hasInconsistency ? 3 : 2),
+                            pointRadius: hasInconsistency ? 8 : (isMissingData ? 6 : 4),
+                            pointBorderWidth: hasInconsistency ? 3 : 1,
+                            pointBackgroundColor: hasInconsistency ? '#ef4444' : (isMissingData ? model.color + '80' : model.color),
+                            pointBorderColor: hasInconsistency ? '#dc2626' : model.color,
+                            // Custom properties for tooltip identification
+                            _isMissingData: isMissingData,
+                            _hasInconsistency: hasInconsistency,
+                            _originalColor: model.color
+                        };
+                    });
+
+                    this.charts.biasTimeline = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: this.chartData.timeline.map(t => new Date(t.date).toLocaleDateString()),
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const modelName = context.dataset.label;
+                                            const value = context.parsed.y;
+                                            const isMissing = context.dataset._isMissingData;
+                                            const hasInconsistency = context.dataset._hasInconsistency;
+                                            
+                                            let label = `${modelName}: ${value.toFixed(1)}%`;
+                                            if (isMissing) {
+                                                label += ' - Missing data for this model so user do not think it scores that poorly';
+                                            }
+                                            if (hasInconsistency) {
+                                                label += ' - ⚠️ Data inconsistency detected';
+                                            }
+                                            if (!isMissing && !hasInconsistency) {
+                                                label += ' - Normal data';
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: 'Bias Score (%)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                createDeepDiveCharts(data) {
+                    // Response Time Chart
+                    const responseCtx = document.getElementById(`responseTimeChart_${this.selectedLLMForDeepDive}`);
+                    if (responseCtx) {
+                        new Chart(responseCtx, {
+                            type: 'line',
+                            data: {
+                                labels: data.dates,
+                                datasets: [{
+                                    data: data.responseTimes,
+                                    borderColor: '#3B82F6',
+                                    backgroundColor: '#3B82F620',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+                    }
+
+                    // Bias Score Chart
+                    const biasCtx = document.getElementById(`biasScoreChart_${this.selectedLLMForDeepDive}`);
+                    if (biasCtx) {
+                        new Chart(biasCtx, {
+                            type: 'line',
+                            data: {
+                                labels: data.dates,
+                                datasets: [{
+                                    data: data.biasScores,
+                                    borderColor: '#10B981',
+                                    backgroundColor: '#10B98120',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+                    }
+
+                    // Category Chart
+                    const categoryCtx = document.getElementById(`categoryChart_${this.selectedLLMForDeepDive}`);
+                    if (categoryCtx) {
+                        new Chart(categoryCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: data.categories.map(c => c.name),
+                                datasets: [{
+                                    data: data.categories.map(c => c.score),
+                                    backgroundColor: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6']
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+                    }
+                },
+
+                createDriftComparisonChart() {
+                    const ctx = document.getElementById('driftComparisonChart');
+                    if (!ctx || !this.chartData.models.length) return;
+
+                    if (this.charts.driftComparison) {
+                        this.charts.driftComparison.destroy();
+                    }
+
+                    this.charts.driftComparison = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: this.biasCategories.map(c => c.name),
+                            datasets: this.chartData.models.map(model => ({
+                                label: model.name,
+                                data: model.driftScores || [],
+                                backgroundColor: model.color + '80',
+                                borderColor: model.color,
+                                borderWidth: 1
+                            }))
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Drift from Baseline (%)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                createRadarChart() {
+                    const ctx = document.getElementById('radarChart');
+                    if (!ctx || !this.radarChartData.models.length) return;
+
+                    if (this.charts.radar) {
+                        this.charts.radar.destroy();
+                    }
+
+                    // ✅ Apply validation styling to radar chart datasets
+                    const datasets = this.radarChartData.models.map(model => {
+                        const isMissingData = this.missingDataModels.includes(model.name);
+                        const hasInconsistency = this.dataInconsistencies.some(inc => inc.model === model.name);
+                        
+                        return {
+                            label: model.name,
+                            data: model.scores || [],
+                            borderColor: isMissingData ? model.color + '60' : (hasInconsistency ? '#ef4444' : model.color),
+                            backgroundColor: isMissingData ? model.color + '10' : (hasInconsistency ? '#ef444410' : model.color + '20'),
+                            pointBackgroundColor: hasInconsistency ? '#ef4444' : (isMissingData ? model.color + '80' : model.color),
+                            pointBorderColor: hasInconsistency ? '#dc2626' : model.color,
+                            pointRadius: hasInconsistency ? 8 : (isMissingData ? 5 : 4),
+                            borderWidth: isMissingData ? 1 : (hasInconsistency ? 3 : 2),
+                            pointBorderWidth: hasInconsistency ? 3 : 1,
+                            // Custom properties for tooltip identification
+                            _isMissingData: isMissingData,
+                            _hasInconsistency: hasInconsistency,
+                            _originalColor: model.color
+                        };
+                    });
+
+                    this.charts.radar = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: this.biasCategories.map(c => c.name),
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const modelName = context.dataset.label;
+                                            const value = context.parsed.r;
+                                            const isMissing = context.dataset._isMissingData;
+                                            const hasInconsistency = context.dataset._hasInconsistency;
+                                            
+                                            let label = `${modelName}: ${value.toFixed(1)}%`;
+                                            if (isMissing) {
+                                                label += ' - Missing data for this model so user do not think it scores that poorly';
+                                            }
+                                            if (hasInconsistency) {
+                                                label += ' - ⚠️ Data inconsistency detected';
+                                            }
+                                            if (!isMissing && !hasInconsistency) {
+                                                label += ' - Normal data';
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                createConsistencyChart() {
+                    const ctx = document.getElementById('consistencyChart');
+                    if (!ctx || !this.chartData.models.length) return;
+
+                    if (this.charts.consistency) {
+                        this.charts.consistency.destroy();
+                    }
+
+                    this.charts.consistency = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: this.chartData.timeline.map(t => new Date(t.date).toLocaleDateString()),
+                            datasets: this.chartData.models.map(model => ({
+                                label: model.name,
+                                data: model.consistencyScores || [],
+                                borderColor: model.color,
+                                backgroundColor: model.color + '20',
+                                tension: 0.4,
+                                fill: false
+                            }))
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: 'Consistency Score (%)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                createRedFlagChart() {
+                    const ctx = document.getElementById('redFlagChart');
+                    if (!ctx) return;
+
+                    if (this.charts.redFlag) {
+                        this.charts.redFlag.destroy();
+                    }
+
+                    // Generate sample red flag data based on categories
+                    const redFlagData = this.biasCategories.map(category => ({
+                        category: category.name,
+                        count: Math.floor(Math.random() * 10) // Replace with real data
+                    }));
+
+                    this.charts.redFlag = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: redFlagData.map(d => d.category),
+                            datasets: [{
+                                label: 'Red Flags',
+                                data: redFlagData.map(d => d.count),
+                                backgroundColor: '#EF4444',
+                                borderColor: '#DC2626',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Number of Red Flags'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                // Utility methods
+                getDriftColor(drift) {
+                    if (drift <= 25) return 'bg-green-200';
+                    if (drift <= 50) return 'bg-yellow-300';
+                    if (drift <= 75) return 'bg-orange-400';
+                    return 'bg-red-500';
+                },
+
+                formatDate(dateString) {
+                    return new Date(dateString).toLocaleDateString();
+                }
+            },
+            watch: {
+                selectedCategory() {
+                    this.loadRandomQuestion();
+                    this.aiResponse = null;
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

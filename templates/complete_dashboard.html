@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Multi-LLM Ethics Dashboard - Skyforskning.no</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .missing-data-indicator {
+            background: repeating-linear-gradient(
+                45deg,
+                #f87171,
+                #f87171 10px,
+                #fca5a5 10px,
+                #fca5a5 20px
+            );
+            opacity: 0.7;
+        }
+        
+        .data-available {
+            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 1rem 0;
+        }
+        
+        .model-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #e5e7eb;
+        }
+        
+        .model-card.has-data {
+            border-left-color: #10b981;
+        }
+        
+        .model-card.missing-data {
+            border-left-color: #ef4444;
+        }
+        
+        .model-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-missing {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .auto-refresh {
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app">
+        <!-- Header -->
+        <header class="gradient-bg text-white shadow-lg">
+            <div class="container mx-auto px-6 py-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-4xl font-light">🤖 Enhanced Multi-LLM Ethics Dashboard</h1>
+                        <p class="text-blue-100 mt-2">Comprehensive bias monitoring with automatic LLM detection</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="refreshAllData()" 
+                                class="px-4 py-2 bg-white bg-opacity-20 rounded-lg transition-colors hover:bg-opacity-30">
+                            <i class="fas fa-sync-alt mr-2" id="refresh-icon"></i>
+                            <span id="refresh-text">Refresh Data</span>
+                        </button>
+                        <div class="text-right">
+                            <p class="text-sm text-blue-100">Last Updated</p>
+                            <p class="font-semibold" id="last-update">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="container mx-auto px-6 py-8">
+            
+            <!-- Auto-Detection Summary -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-robot mr-2 text-blue-600"></i>
+                    Auto-Detected LLMs
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600" id="total-active-models">0</div>
+                        <div class="text-sm text-gray-600">Active Models</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-600" id="new-models-count">0</div>
+                        <div class="text-sm text-gray-600">New Models Detected</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600" id="timeline-models-with-data">0</div>
+                        <div class="text-sm text-gray-600">Models with Timeline Data</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-orange-600" id="radar-models-with-data">0</div>
+                        <div class="text-sm text-gray-600">Models with Category Data</div>
+                    </div>
+                </div>
+                
+                <!-- New Models Alert -->
+                <div id="new-models-alert" class="mt-6 p-4 bg-green-50 border-l-4 border-green-500 rounded hidden">
+                    <div class="flex items-center">
+                        <i class="fas fa-plus-circle text-green-500 mr-2"></i>
+                        <h3 class="font-semibold text-green-800">New LLMs Detected</h3>
+                    </div>
+                    <p class="text-green-700 mt-1">
+                        New models automatically included: 
+                        <span class="font-semibold" id="new-models-list"></span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Multi-LLM Bias Trend Timeline -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-chart-line mr-2 text-green-600"></i>
+                    Multi-LLM Bias Trend Timeline
+                </h2>
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+                
+                <!-- Model Status Cards -->
+                <div id="timeline-model-cards" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-6">
+                    <!-- Model cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Category-Specific Performance Radar -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-chart-pie mr-2 text-purple-600"></i>
+                    Category-Specific Performance Radar
+                </h2>
+                <div class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                
+                <!-- Detailed Category Breakdown -->
+                <div id="radar-model-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <!-- Model cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Ethical Consistency Rolling Average -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-balance-scale mr-2 text-indigo-600"></i>
+                    Ethical Consistency Rolling Average
+                </h2>
+                <div class="chart-container">
+                    <canvas id="consistencyChart"></canvas>
+                </div>
+                
+                <!-- Consistency Summary -->
+                <div id="consistency-model-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                    <!-- Model cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Global data stores
+        let timelineData = { timeline_data: [], total_models: 0, models_with_data: 0 };
+        let radarData = { radar_data: [], categories: [], total_models: 0, models_with_data: 0 };
+        let consistencyData = { consistency_data: [], total_models: 0, models_with_data: 0 };
+        let autoDetectionData = { total_active_models: 0, new_models_detected: [], recent_models: [] };
+        
+        // Chart instances
+        let timelineChart = null;
+        let radarChart = null;
+        let consistencyChart = null;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadAllData();
+            
+            // Auto-refresh every 60 seconds
+            setInterval(async () => {
+                await loadAllData();
+                updateLastUpdateTime();
+            }, 60000);
+        });
+        
+        async function loadAllData() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            const refreshText = document.getElementById('refresh-text');
+            
+            refreshIcon.classList.add('auto-refresh');
+            refreshText.textContent = 'Refreshing...';
+            
+            try {
+                await Promise.all([
+                    loadTimelineData(),
+                    loadRadarData(),
+                    loadConsistencyData(),
+                    loadAutoDetectionData()
+                ]);
+                
+                // Render charts after data is loaded
+                setTimeout(() => {
+                    renderTimelineChart();
+                    renderRadarChart();
+                    renderConsistencyChart();
+                }, 100);
+                
+                updateModelCards();
+                updateSummaryStats();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            } finally {
+                refreshIcon.classList.remove('auto-refresh');
+                refreshText.textContent = 'Refresh Data';
+                updateLastUpdateTime();
+            }
+        }
+        
+        async function refreshAllData() {
+            await loadAllData();
+        }
+        
+        async function loadTimelineData() {
+            try {
+                // Fetch from FastAPI on port 8010
+                const response = await fetch('http://localhost:8010/api/v1/multi-llm-bias-timeline');
+                timelineData = await response.json();
+            } catch (error) {
+                console.error('Error loading timeline data:', error);
+                timelineData = { timeline_data: [], total_models: 0, models_with_data: 0 };
+            }
+        }
+        
+        async function loadRadarData() {
+            try {
+                // Fetch from FastAPI on port 8010
+                const response = await fetch('http://localhost:8010/api/v1/category-specific-radar');
+                radarData = await response.json();
+            } catch (error) {
+                console.error('Error loading radar data:', error);
+                radarData = { radar_data: [], categories: [], total_models: 0, models_with_data: 0 };
+            }
+        }
+        
+        async function loadConsistencyData() {
+            try {
+                // Fetch from FastAPI on port 8010
+                const response = await fetch('http://localhost:8010/api/v1/ethical-consistency-rolling');
+                consistencyData = await response.json();
+            } catch (error) {
+                console.error('Error loading consistency data:', error);
+                consistencyData = { consistency_data: [], total_models: 0, models_with_data: 0 };
+            }
+        }
+        
+        async function loadAutoDetectionData() {
+            try {
+                // Fetch from FastAPI on port 8010
+                const response = await fetch('http://localhost:8010/api/v1/auto-detect-new-llms');
+                autoDetectionData = await response.json();
+            } catch (error) {
+                console.error('Error loading auto-detection data:', error);
+                autoDetectionData = { total_active_models: 0, new_models_detected: [], recent_models: [] };
+            }
+        }
+        
+        function updateSummaryStats() {
+            document.getElementById('total-active-models').textContent = autoDetectionData.total_active_models || 0;
+            document.getElementById('new-models-count').textContent = autoDetectionData.new_models_detected ? autoDetectionData.new_models_detected.length : 0;
+            document.getElementById('timeline-models-with-data').textContent = timelineData.models_with_data || 0;
+            document.getElementById('radar-models-with-data').textContent = radarData.models_with_data || 0;
+            
+            // Show new models alert if any new models detected
+            const newModelsAlert = document.getElementById('new-models-alert');
+            const newModelsList = document.getElementById('new-models-list');
+            
+            if (autoDetectionData.new_models_detected && autoDetectionData.new_models_detected.length > 0) {
+                newModelsList.textContent = autoDetectionData.new_models_detected.join(', ');
+                newModelsAlert.classList.remove('hidden');
+            } else {
+                newModelsAlert.classList.add('hidden');
+            }
+        }
+        
+        function updateModelCards() {
+            // Update timeline model cards
+            const timelineCards = document.getElementById('timeline-model-cards');
+            timelineCards.innerHTML = '';
+            
+            timelineData.timeline_data.forEach(model => {
+                const card = createModelCard(model, 'timeline');
+                timelineCards.appendChild(card);
+            });
+            
+            // Update radar model cards
+            const radarCards = document.getElementById('radar-model-cards');
+            radarCards.innerHTML = '';
+            
+            radarData.radar_data.forEach(model => {
+                const card = createRadarModelCard(model);
+                radarCards.appendChild(card);
+            });
+            
+            // Update consistency model cards
+            const consistencyCards = document.getElementById('consistency-model-cards');
+            consistencyCards.innerHTML = '';
+            
+            consistencyData.consistency_data.forEach(model => {
+                const card = createConsistencyModelCard(model);
+                consistencyCards.appendChild(card);
+            });
+        }
+        
+        function createModelCard(model, type) {
+            const card = document.createElement('div');
+            card.className = `model-card p-4 bg-gray-50 rounded-lg ${model.status === 'active' ? 'has-data' : 'missing-data'}`;
+            
+            const statusClass = model.status === 'active' ? 'status-active' : 'status-missing';
+            const statusText = model.status === 'active' ? 'Active' : 'Missing Data';
+            
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold truncate">${model.model}</h3>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                ${model.status === 'active' ? `
+                    <div class="text-sm text-gray-600">
+                        <p>Latest Score: <span class="font-semibold">${(model.latest_score * 100).toFixed(1)}%</span></p>
+                        <p>Data Points: <span class="font-semibold">${model.data.length}</span></p>
+                    </div>
+                ` : `
+                    <div class="text-sm text-red-600">
+                        <p><i class="fas fa-exclamation-triangle mr-1"></i>${model.message}</p>
+                    </div>
+                `}
+            `;
+            
+            return card;
+        }
+        
+        function createRadarModelCard(model) {
+            const card = document.createElement('div');
+            card.className = `model-card p-4 bg-gray-50 rounded-lg ${model.status === 'active' ? 'has-data' : 'missing-data'}`;
+            
+            const statusClass = model.status === 'active' ? 'status-active' : 'status-missing';
+            const statusText = model.status === 'active' ? 'Active' : 'Missing Latest Data';
+            
+            let content = `
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold">${model.model}</h3>
+                    <div class="flex items-center space-x-2">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                        ${model.status === 'active' ? `<span class="text-sm text-gray-600">${model.overall_score.toFixed(0)}/100</span>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            if (model.status === 'active') {
+                content += `
+                    <div class="mb-2">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Data Coverage</span>
+                            <span>${(model.data_coverage * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="h-2 rounded-full ${model.data_coverage > 0.7 ? 'data-available' : 'missing-data-indicator'}" 
+                                 style="width: ${model.data_coverage * 100}%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        ${getTopCategories(model.categories).slice(0, 3).map(([category, score]) => `
+                            <div class="flex justify-between text-xs">
+                                <span class="truncate">${category.replace('_', ' ')}</span>
+                                <span class="${score.response_count > 0 ? 'font-semibold' : 'text-red-500'}">
+                                    ${score.response_count > 0 ? score.score.toFixed(0) : 'No Data'}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                content += `
+                    <div class="text-sm text-red-600">
+                        <p><i class="fas fa-exclamation-triangle mr-1"></i>Missing latest data for category analysis</p>
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = content;
+            return card;
+        }
+        
+        function createConsistencyModelCard(model) {
+            const card = document.createElement('div');
+            card.className = `model-card p-4 bg-gray-50 rounded-lg ${model.status === 'active' ? 'has-data' : 'missing-data'}`;
+            
+            const statusClass = model.status === 'active' ? 'status-active' : 'status-missing';
+            const statusText = model.status === 'active' ? 'Active' : 'Missing Data';
+            
+            let content = `
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold">${model.model}</h3>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+            `;
+            
+            if (model.status === 'active') {
+                const consistencyColor = model.overall_consistency > 70 ? 'text-green-600' : 
+                                       model.overall_consistency > 50 ? 'text-yellow-600' : 'text-red-600';
+                
+                content += `
+                    <div class="text-2xl font-bold text-center mb-2 ${consistencyColor}">
+                        ${model.overall_consistency.toFixed(1)}%
+                    </div>
+                    <div class="text-xs text-center text-gray-600 mb-3">Overall Consistency</div>
+                    
+                    <div class="flex items-center justify-between text-sm">
+                        <span>Trend</span>
+                        <span class="${model.trend === 'improving' ? 'text-green-600' : 'text-gray-600'}">
+                            <i class="${model.trend === 'improving' ? 'fas fa-arrow-up' : 'fas fa-minus'}"></i>
+                            ${model.trend}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span>Data Points</span>
+                        <span class="font-semibold">${model.rolling_averages.length}</span>
+                    </div>
+                `;
+            } else {
+                content += `
+                    <div class="text-center text-sm text-red-600">
+                        <p><i class="fas fa-exclamation-triangle mr-1"></i>${model.message}</p>
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = content;
+            return card;
+        }
+        
+        function getTopCategories(categories) {
+            return Object.entries(categories)
+                .filter(([_, data]) => data.response_count > 0)
+                .sort(([_, a], [__, b]) => b.score - a.score);
+        }
+        
+        function updateLastUpdateTime() {
+            document.getElementById('last-update').textContent = new Date().toLocaleString();
+        }
+        
+        function renderTimelineChart() {
+            const canvas = document.getElementById('timelineChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+            
+            const datasets = timelineData.timeline_data
+                .filter(model => model.status === 'active')
+                .map((model, index) => ({
+                    label: model.model,
+                    data: model.data.map(point => ({
+                        x: point.date,
+                        y: point.bias_score * 100
+                    })),
+                    borderColor: `hsl(${index * 60}, 70%, 50%)`,
+                    backgroundColor: `hsl(${index * 60}, 70%, 50%, 0.1)`,
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                }));
+            
+            timelineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Bias Trends for ${timelineData.total_models} LLMs (${timelineData.models_with_data} with data)`
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Bias Score (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderRadarChart() {
+            const canvas = document.getElementById('radarChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            if (radarChart) {
+                radarChart.destroy();
+            }
+            
+            const datasets = radarData.radar_data
+                .filter(model => model.status === 'active')
+                .slice(0, 6) // Limit to 6 models for readability
+                .map((model, index) => {
+                    const scores = radarData.categories.map(category => {
+                        const categoryData = model.categories[category];
+                        return categoryData && categoryData.response_count > 0 ? categoryData.score : 0;
+                    });
+                    
+                    return {
+                        label: model.model,
+                        data: scores,
+                        borderColor: `hsl(${index * 50}, 70%, 50%)`,
+                        backgroundColor: `hsl(${index * 50}, 70%, 50%, 0.2)`,
+                        borderWidth: 2
+                    };
+                });
+            
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: radarData.categories.map(cat => cat.replace('_', ' ')),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Category Performance (${radarData.models_with_data}/${radarData.total_models} models with data)`
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderConsistencyChart() {
+            const canvas = document.getElementById('consistencyChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            if (consistencyChart) {
+                consistencyChart.destroy();
+            }
+            
+            const datasets = consistencyData.consistency_data
+                .filter(model => model.status === 'active')
+                .map((model, index) => ({
+                    label: model.model,
+                    data: model.rolling_averages.map(point => ({
+                        x: point.date,
+                        y: point.consistency_score
+                    })),
+                    borderColor: `hsl(${index * 45}, 70%, 50%)`,
+                    backgroundColor: `hsl(${index * 45}, 70%, 50%, 0.1)`,
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                }));
+            
+            consistencyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Ethical Consistency Rolling Average (${consistencyData.models_with_data}/${consistencyData.total_models} models)`
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Consistency Score (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(curl:*)",
+      "Bash(systemctl:*)",
+      "Bash(systemctl status:*)",
+      "Bash(mysql:*)",
+      "Bash(pkill:*)",
+      "Bash(timeout:*)",
+      "Bash(pip3 install:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(true)",
+      "Bash(find:*)",
+      "Bash(nginx:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(sudo pkill:*)"
+    ],
+    "deny": []
+  }
+}

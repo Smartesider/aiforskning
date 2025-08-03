@@ -333,7 +333,7 @@ class AdminDashboard {
 
     async loadLogs() {
         try {
-            const response = await this.apiCall('/api/logs');
+            const response = await this.apiCall('/api/v1/logs');
             if (response?.logs) {
                 this.renderLogs(response.logs);
             }
@@ -606,7 +606,7 @@ async function testAllConnections() {
 
 async function exportLogs() {
     try {
-        const response = await fetch(`${dashboard.apiUrl}/api/logs/export`);
+        const response = await fetch(`${dashboard.apiUrl}/api/v1/logs/export`);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -660,7 +660,7 @@ async function saveApiKey() {
     }
 
     try {
-        const response = await dashboard.apiCall('/api/keys/add', 'POST', {
+        const response = await dashboard.apiCall('/api/v1/keys/add', 'POST', {
             provider,
             key,
             name: name || null
@@ -683,7 +683,7 @@ async function saveApiKey() {
 
 async function testApiKey(keyId) {
     try {
-        const response = await dashboard.apiCall(`/api/keys/test/${keyId}`, 'POST');
+        const response = await dashboard.apiCall(`/api/v1/keys/test/${keyId}`, 'POST');
         if (response) {
             dashboard.showAlert('success', `API key test ${response.valid ? 'passed' : 'failed'}`);
             dashboard.loadApiKeys();
@@ -695,7 +695,7 @@ async function testApiKey(keyId) {
 
 async function editApiKey(keyId) {
     try {
-        const key = await dashboard.apiCall(`/api/keys/get/${keyId}`);
+        const key = await dashboard.apiCall(`/api/v1/keys/get/${keyId}`);
         if (key) {
             document.getElementById('editKeyContent').innerHTML = `
                 <div class="form-group">
@@ -735,7 +735,7 @@ async function updateApiKey(keyId) {
     const name = document.getElementById('editKeyName').value;
 
     try {
-        const response = await dashboard.apiCall(`/api/keys/update/${keyId}`, 'PUT', {
+        const response = await dashboard.apiCall(`/api/v1/keys/update/${keyId}`, 'PUT', {
             provider,
             key,
             name: name || null
@@ -757,7 +757,7 @@ async function deleteApiKey(keyId) {
     }
 
     try {
-        const response = await dashboard.apiCall(`/api/keys/delete/${keyId}`, 'DELETE');
+        const response = await dashboard.apiCall(`/api/v1/keys/delete/${keyId}`, 'DELETE');
         if (response) {
             dashboard.showAlert('success', 'API key deleted successfully');
             dashboard.loadApiKeys();
@@ -784,7 +784,7 @@ function refreshLogs() {
 
 function clearLogs() {
     if (confirm('Are you sure you want to clear all logs?')) {
-        dashboard.apiCall('/api/logs/clear', 'DELETE').then(() => {
+        dashboard.apiCall('/api/v1/logs/clear', 'DELETE').then(() => {
             dashboard.showAlert('success', 'Logs cleared successfully');
             dashboard.loadLogs();
         });

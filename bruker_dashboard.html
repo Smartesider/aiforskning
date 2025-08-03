@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ethics Testing - User Dashboard</title>
+    
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .user-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+        
+        .status-online {
+            color: #22c55e;
+        }
+        
+        .status-offline {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app">
+        <!-- Header -->
+        <header class="gradient-bg text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold">User Dashboard</h1>
+                        <p class="mt-2 text-blue-100">AI Ethics Testing Results</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <p class="text-sm text-blue-100">System Status</p>
+                            <p :class="systemStatus.status === 'healthy' ? 'status-online' : 'status-offline'">
+                                <i :class="systemStatus.status === 'healthy' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+                                {{ systemStatus.status || 'Loading...' }}
+                            </p>
+                        </div>
+                        <div class="space-x-2">
+                            <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                                <i class="fas fa-home mr-2"></i>Home
+                            </a>
+                            <a href="/admin/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                                <i class="fas fa-cog mr-2"></i>Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- User Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="user-card p-6 rounded-xl shadow-sm card-hover">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <i class="fas fa-chart-bar text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Your Tests</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ userStats.totalTests || '0' }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="user-card p-6 rounded-xl shadow-sm card-hover">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Passed Tests</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ userStats.passedTests || '0' }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="user-card p-6 rounded-xl shadow-sm card-hover">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-full">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Flagged Issues</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ userStats.flaggedIssues || '0' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Results -->
+            <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-list mr-2 text-blue-600"></i>
+                    Recent Test Results
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="test in recentTests" :key="test.id">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ test.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ test.model }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ test.category }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="test.status === 'passed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
+                                          class="px-2 py-1 text-xs font-semibold rounded-full">
+                                        {{ test.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ test.date }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-play-circle mr-2 text-green-600"></i>
+                    Quick Actions
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <button @click="runQuickTest" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-all">
+                        <i class="fas fa-flask mr-2"></i>
+                        Run Quick Test
+                    </button>
+                    <button @click="viewHistory" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-all">
+                        <i class="fas fa-history mr-2"></i>
+                        View History
+                    </button>
+                    <button @click="generateReport" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-all">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    systemStatus: {},
+                    userStats: {
+                        totalTests: 23,
+                        passedTests: 19,
+                        flaggedIssues: 4
+                    },
+                    recentTests: [
+                        {
+                            id: 'T001',
+                            model: 'GPT-4',
+                            category: 'Political Bias',
+                            status: 'passed',
+                            date: '2025-07-31'
+                        },
+                        {
+                            id: 'T002',
+                            model: 'Claude-3',
+                            category: 'Gender Bias',
+                            status: 'flagged',
+                            date: '2025-07-31'
+                        },
+                        {
+                            id: 'T003',
+                            model: 'Grok',
+                            category: 'Racial Bias',
+                            status: 'passed',
+                            date: '2025-07-30'
+                        }
+                    ]
+                }
+            },
+            methods: {
+                async loadSystemStatus() {
+                    try {
+                        // 🧷 Dette skal være en fetch til FastAPI på port 8010, som svarer med JSON
+                        const response = await fetch('https://skyforskning.no:8010/api/system-status');
+                        this.systemStatus = await response.json();
+                    } catch (error) {
+                        console.error('Failed to load system status:', error);
+                        this.systemStatus = {
+                            status: 'error',
+                            lastUpdate: new Date().toISOString()
+                        };
+                    }
+                },
+                
+                runQuickTest() {
+                    alert('Quick test feature coming soon!');
+                },
+                
+                viewHistory() {
+                    alert('History view feature coming soon!');
+                },
+                
+                generateReport() {
+                    alert('Report generation feature coming soon!');
+                }
+            },
+            async mounted() {
+                await this.loadSystemStatus();
+                
+                // Auto-refresh every 30 seconds
+                setInterval(() => {
+                    this.loadSystemStatus();
+                }, 30000);
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
