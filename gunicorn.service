@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve SkyForskning.no
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/skyforskning.no/forskning
+ExecStart=/usr/local/bin/gunicorn -c /home/skyforskning.no/forskning/gunicorn.conf.py src.web_app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

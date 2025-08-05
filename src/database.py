@@ -1,5 +1,13 @@
 """
 Data storage and retrieval for the AI Ethics Testing Framework
+
+SKYFORSKNING.NO PROSJEKTREGLER:
+- Backend port: 8010 kun
+- API: https://skyforskning.no/api/v1/ (FastAPI)
+- Ingen demo/placeholder-data
+- Bruk kun godkjente API-nøkler
+- All frontend kommuniserer kun med FastAPI-server
+- Spør alltid før endringer som bryter disse reglene
 """
 
 import json

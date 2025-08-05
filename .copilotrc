@@ -1,0 +1,63 @@
+# SkyForskning.no - AI Copilot Project Instruction File
+# JERNREGELSETTET - MUST BE FOLLOWED WITHOUT EXCEPTIONS
+
+# REGEL 1: PORT
+PORT_RULE="All backend-kommunikasjon må skje på port 8010 og kun denne."
+
+# REGEL 2: OFFENTLIGE FILER
+PUBLIC_FILES_RULE="Kun /home/skyforskning.no/public_html/ og undermapper. Ingen andre kataloger."
+
+# REGEL 3: API
+API_RULE="Alle API-kall skal gå til https://skyforskning.no/api/v1/ - Kun FastAPI-server skal motta og svare."
+
+# REGEL 4: INGEN DEMO-DATA
+NO_DEMO_DATA_RULE="INGEN DEMO ELLER PLACEHOLDER DATA: Kun live data skal vises og brukes."
+
+# REGEL 5: API-NØKLER
+API_KEYS_RULE="Kun forhåndsgitte nøkler i prosjektet skal benyttes."
+
+# REGEL 6: AUTENTISERING
+AUTH_RULE="SUPERUSER: Bruker Terje / Passord Klokken!12!?! kun i sikret miljø. MARIADB ROOT: Passord Klokken!12!?!."
+
+# REGEL 7: KOMMENTERING
+COMMENT_RULE="Ved generering av kode, må alle regler følges strengt. Alle filer skal ha kommentarblokk øverst med regelsammendrag."
+
+# REGEL 8: API VALIDERING
+API_VALIDATION_RULE="Før generering av nye API-endpoints må feltene valideres mot databaseskjema, og API-respons valideres mot frontend-forventninger."
+
+# REGEL 9: SERVER ENDRINGER
+SERVER_CHANGE_RULE="Endringer i nginx-konfig eller serverrestart skal kun utføres når strengt nødvendig, alltid med nginx -t test før reload."
+
+# REGEL 10: PRE-COMMIT HOOK
+PRECOMMIT_RULE="Automatisk generert pre-commit hook i .git/hooks/pre-commit skal validere alle regler. Ved mangler, gi advarsel og nekt commit."
+
+# REGEL 11: DOKUMENTASJON
+DOCS_RULE="Vedlikehold .copilotrc, lint-rules.py, og README.md for å sikre at alle utviklere følger prosjektets jernregler."
+
+# REGEL 12: NO HALLUCINATIONS
+NO_HALLUCINATION_RULE="All generert kode skal unngå hallusinasjoner, dvs. ikke lage fiktive data, ubegrunnede antagelser, eller uverifiserte implementasjoner."
+
+# REGEL 13: VERIFICATION
+VERIFICATION_RULE="Ved usikkerhet, still spørsmål til utvikleren før du går videre. Ikke anta eller improviser."
+
+# REGEL 14: SENSITIVE DATA
+SENSITIVE_DATA_RULE="Ingen sensitive nøkler hardkodes uten at det er definert i godkjente miljøvariabler eller sikre lagringsmekanismer."
+
+# REGEL 15: API RESPONSES
+API_RESPONSE_RULE="All frontend-kommunikasjon skal returnere JSON i korrekt format, ikke HTML eller ren tekst som API-respons."
+
+# REGEL 16: ERROR MESSAGES
+ERROR_MESSAGE_RULE="Feilmeldinger skal være klare, informative og hjelpe til med feilsøking uten å avsløre sensitiv informasjon."
+
+# Instruks til Copilot
+INSTRUCTION="Ved generering av kode, må alle regler følges strengt. Ved tvil, still spørsmål. Alltid inkluder kommentarer som minner om reglene. Valider alltid databasefelt og API-responser."
+
+# FILSTRUKTUR
+FILE_STRUCTURE="
+- /.copilotrc – prosjektregler og AI prompt-instruksjoner  
+- /README.md – prosjektbeskrivelse og regler  
+- /lint-rules.py – skript for validering av kode før commit  
+- /home/skyforskning.no/public_html/ – offentlige filer (HTML, JS, CSS)  
+- /backend/ – FastAPI serverkode med dokumentasjon og valideringer  
+- /.git/hooks/pre-commit – automatisk generert pre-commit hook som følger jernreglene
+"

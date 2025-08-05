@@ -1,0 +1,189 @@
+SkyForskning.no – Copilot Project Instruction File
+1. OVERORDNET PROSJEKTINSTRUKS FOR COPILOT
+Les og følg ALT i dette dokumentet nøye. Ingen avvik tillatt uten eksplisitt godkjenning.
+
+PORT: All backend-kommunikasjon må skje på port 8010 og kun denne.
+
+OFFENTLIGE FILER: Kun /home/skyforskning.no/public_html/ og undermapper. Ingen andre kataloger.
+
+API: Alle API-kall skal gå til https://skyforskning.no/api/v1/ - Kun FastAPI-server skal motta og svare.
+
+SUPERUSER: Bruker Terje / Passord Klokken!12!?! kun i sikret miljø.
+
+MARIADB ROOT: Passord Klokken!12!?!.
+
+API-KEYS: Kun forhåndsgitte nøkler i prosjektet skal benyttes.
+
+INGEN DEMO ELLER PLACEHOLDER DATA: Kun live data skal vises og brukes.
+
+INGEN ALTERNATIVE FRONTEND LAGRINGER, PORTER, API-ENDPOINTS ELLER TEKNOLOGIER: Hvis funnet, skal det fjernes eller korrigeres umiddelbart.
+
+2. FILER COPILOT SKAL OPPRETTE / VEDLIKEHOLDE
+For å maksimere regeloverholdelse skal følgende filer alltid eksistere og inneholde beskrevet innhold:
+
+a) .copilotrc i prosjektets rotmappe
+Innhold:
+
+Sammendrag av alle overordnede regler (som over).
+
+Instruks til Copilot: "Ved generering av kode, må alle regler følges strengt. Ved tvil, still spørsmål."
+
+Krav til kommentering i kode (se pkt. 3).
+
+b) README.md i rot
+Innhold:
+
+Prosjektbeskrivelse med nøkkelregler.
+
+Link til .copilotrc.
+
+Oppfordring til alltid å validere API-endepunkter og sikkerhet.
+
+c) lint-rules.py (eller tilsvarende script)
+Innhold:
+
+Automatisk sjekk av filer for ulovlige porter, stier, demo-data, feil API-URLer.
+
+Skal kunne kjøres som pre-commit hook (kan utvides senere).
+
+d) Kommentar-maler i hovedfiler som index.html, admin/index.html, api.js etc.
+Innhold:
+
+Overskrift med streng påminnelse om prosjektregler.
+
+Instruksjoner om korrekt API-kall, port, nøkkelbruk.
+
+e) .git/hooks/pre-commit
+Viktig: Copilot skal automatisk generere og holde oppdatert denne filen med regler for pre-commit-sjekker som følger prosjektets absolutte krav.
+
+Filen skal inneholde alle nødvendige valideringer (port 8010, API-url, demo-data, API-nøkler osv.).
+
+Copilot skal oppdatere filen hver gang regler endres i .copilotrc eller prosjektets spesifikasjoner.
+
+Filen skal alltid ha kjørbar tillatelse (chmod +x).
+
+Hvis denne filen mangler eller er deaktivert, skal Copilot gi advarsel ved hver commit/generering.
+
+Kommentar i starten av pre-commit:
+
+bash
+Kopier
+# Dette pre-commit hook-scriptet er automatisk generert og vedlikeholdt av AI (Copilot) i henhold til
+# gjeldende prosjektspesifikasjoner for SkyForskning.no.
+# Enhver endring i regler skal reflekteres her av AI for å sikre 100% samsvar.
+3. SMARTE KOMMENTARKRAV FOR KODEGENERASJON
+I alle genererte kodefiler skal Copilot automatisk inkludere:
+
+ØVERST I FILEN:
+
+js
+Kopier
+/*
+ * SKYFORSKNING.NO PROSJEKTREGLER:
+ * - Backend port: 8010 kun
+ * - API: https://skyforskning.no/api/v1/ (FastAPI)
+ * - Ingen demo/placeholder-data
+ * - Bruk kun godkjente API-nøkler
+ * - All frontend kommuniserer kun med FastAPI-server
+ * - Spør alltid før endringer som bryter disse reglene
+ */
+Ved opprettelse av nytt API-endpoint / funksjon:
+
+js
+Kopier
+/*
+ * NYTT ENDPOINT: [Navn/funksjon]
+ * Sjekk at alle felt og datatyper stemmer med DB og API
+ * Verifiser at det ikke bryter port/API regler
+ */
+Kommentarer som minner om at ingen server restart/nginx reload skal skje uten at det er strengt nødvendig.
+
+4. STYRENDE FUNKSJONER FOR Å ØKE REGLFØLGING
+Copilot skal inkludere automatisk valideringskode som:
+
+Før kjøring/verifisering av API-kall:
+Sjekk at URL er https://skyforskning.no/api/v1/ og at port 8010 brukes.
+
+Ved endring av miljøvariabler eller sensitiv info:
+Valider at kun godkjente nøkler/passord benyttes.
+
+For frontend:
+Legg inn funksjoner som kontrollerer live-data og avviser eventuelle demo-verdier.
+
+For backend:
+Automatiske kontroller for at ingen andre porter åpnes, og at serverrestarts kun skjer hvis det er oppdaget kritiske endringer.
+
+Copilot skal ved hver endring i regler automatisk regenerere og validere pre-commit-scriptet.
+
+Hvis reglene oppdateres i .copilotrc, skal Copilot automatisk oppdatere pre-commit hook og sjekke at den fortsatt kjører korrekt.
+
+5. LOGISK VERIFISERING AV NYE ENDPOINTS / FUNKSJONER
+Krav: Før Copilot fullfører eller genererer et nytt API-endpoint eller backend-funksjon, må den:
+
+Analysere hvilke DB-tabeller og felt det kobles til.
+
+Verifisere at feltene stemmer overens med databasen (riktig type, navn, NULL/NOT NULL etc).
+
+Sikre at API-svar har korrekt format i henhold til frontendforventninger.
+
+Bekrefte at ingen ulovlige porter, URLer eller uautoriserte nøkler brukes.
+
+Inkludere kommentarer som forklarer koblinger og validering.
+
+6. SERVER RESTART OG NGINX-ENDRINGER
+Copilot skal aldri foreslå eller utføre server restarts eller nginx reloads med mindre:
+
+Det foreligger endringer i konfigurasjonsfiler som direkte krever det (f.eks. portendringer, proxy-endringer).
+
+Det foreligger en eksplisitt godkjent trigger/kommando for restart i prosjektet.
+
+Før restart skal det kjøres automatisk test av nginx-konfig (nginx -t), og restart nektes ved feil.
+
+All nginx-endring skal dokumenteres i changelog med timestamp og ansvarlig bruker.
+
+7. ØNSKET FILSTRUKTUR I PROSJEKTET
+bash
+Kopier
+/.skyforskning.copilotrc  # Regler og AI prompt
+/README.md                # Prosjektoversikt og regler
+/lint-rules.py            # Sjekk-script for regelbrudd
+/home/skyforskning.no/public_html/
+  index.html              # Frontend, med kommentarer
+  admin/
+    index.html            # Admin panel frontend
+  js/
+    api.js                # JS for API-kall, med kommentarer
+/backend/
+  main.py                 # FastAPI server, med kommentarregler
+  db_models.py            # MariaDB modeller, korrekt definert
+/.git/hooks/
+  pre-commit              # Automatisk generert pre-commit hook med validering av regler
+8. PRE-COMMIT HOOK
+Copilot skal generere og holde denne filen oppdatert i .git/hooks/pre-commit med innhold som validerer:
+
+Kun port 8010 brukes.
+
+API-kall kun til https://skyforskning.no/api/v1/
+
+Ingen demo/placeholder-data i koden.
+
+Kun godkjente API-nøkler brukes.
+
+Offentlige filer kun innenfor /home/skyforskning.no/public_html/.
+
+Avviser commit om noe bryter disse reglene med klare feilmeldinger.
+
+Alltid ha kjørbar tillatelse (chmod +x).
+
+9. ANBEFALTE TILTAK VED OPPDATERING
+Når nye regler legges til i .copilotrc, må Copilot regenerere og teste pre-commit hook.
+
+Ved ny funksjonalitet eller nye endepunkter skal Copilot automatisk legge inn nødvendige kommentarer og valideringsrutiner.
+
+Sørg for dokumentasjon alltid er oppdatert, slik at alle utviklere (inkludert deg selv) enkelt kan forstå og følge reglene.
+
+10. SLUTTORD
+Dette dokumentet er ditt jernreglement for SkyForskning.no-prosjektet. Følger du det, får du et system som ikke bare er solid, men også robust mot feil og avvik.
+
+Copilot (eller annen AI-assistent) skal aldri kunne ta snarveier eller ignorere reglene. Den skal leve og ånde etter disse retningslinjene — alltid.
+

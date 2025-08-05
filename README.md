@@ -1,15 +1,21 @@
-# 🧠 AI Ethics Testing Framework
+# SkyForskning.no - AI-etisk overvåkningsplattform
 
-An advanced system designed to monitor and analyze ethical decision-making patterns across different AI models over time. This framework helps detect "ethical drift" and ensures AI systems maintain consistent moral reasoning.
+En systemkritisk plattform for overvåkning av AI-etikk og etterlevelse av etiske retningslinjer. Denne plattformen er kritisk for sikkerhet og regeloverholdelse.
 
-## 🎯 Overview
+## JERNREGELSETTET - MÅ FØLGES UTEN UNNTAK
 
-This framework presents AI models with 50 carefully crafted ethical dilemmas across 7 categories and analyzes their responses for:
-- **Ethical stance detection** (supportive, neutral, opposed, etc.)
-- **Sentiment analysis** (-1.0 to +1.0)
-- **Certainty scoring** (0.0 to 1.0)
-- **Stance change detection** over time
-- **Comparative analysis** between models
+1. **PORT**: Alle backend-tjenester og APIer må bruke port 8010 og kun denne.
+2. **OFFENTLIGE FILER**: Alle offentlige filer skal ligge kun i `/home/skyforskning.no/public_html/` eller undermapper.
+3. **API**: Alle API-kall i frontend eller backend må gå til `https://skyforskning.no/api/v1/`, som er en FastAPI-server.
+4. **INGEN DEMODATA**: Ingen placeholder-data, demo-data, eller testdata skal brukes eller vises i systemet.
+5. **API-NØKLER**: Kun forhåndsgodkjente API-nøkler skal brukes.
+
+Dette er en avansert plattform som analyserer etiske beslutninger på tvers av ulike AI-modeller og overvåker:
+- **Etisk posisjonsdeteksjon** (støttende, nøytral, motstandende, etc.)
+- **Sentimentanalyse** (-1.0 til +1.0)
+- **Sikkerhetsvurdering** (0.0 til 1.0)
+- **Deteksjon av posisjonsendring** over tid
+- **Sammenlignende analyse** mellom modeller
 
 ## 🧪 Test Categories
 

@@ -2,6 +2,14 @@
 """
 Modern web dashboard for visualizing AI ethics test results
 Supports both simple HTML and Vue.js for enhanced visualizations
+
+SKYFORSKNING.NO PROSJEKTREGLER:
+- Backend port: 8010 kun
+- API: https://skyforskning.no/api/v1/ (FastAPI)
+- Ingen demo/placeholder-data
+- Bruk kun godkjente API-nøkler
+- All frontend kommuniserer kun med FastAPI-server
+- Spør alltid før endringer som bryter disse reglene
 """
 
 from flask import Flask, render_template, jsonify, request, send_from_directory, session, redirect, url_for, flash
@@ -2847,6 +2855,7 @@ def create_app():
     
     # Logging Management Endpoints
     @app.route('/api/logs', methods=['GET'])
+    @admin_required
     def get_logs():
         """Get all log files"""
         try:
@@ -2873,6 +2882,7 @@ def create_app():
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/logs/<filename>', methods=['GET'])
+    @admin_required
     def get_log_content(filename):
         """Get content of a specific log file"""
         try:
@@ -2903,6 +2913,7 @@ def create_app():
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/logs/<filename>', methods=['DELETE'])
+    @admin_required
     def delete_log(filename):
         """Delete a log file"""
         try:
@@ -2922,6 +2933,7 @@ def create_app():
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/logs/clear-all', methods=['POST'])
+    @admin_required
     def clear_all_logs():
         """Clear all log files"""
         try:
@@ -3183,6 +3195,138 @@ def create_app():
                 
         except Exception as e:
             api_logger.error(f"Error getting news: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/news', methods=['POST'])
+    @admin_required
+    def add_news():
+        """Add a news article (admin only)"""
+        try:
+            data = request.get_json()
+            title = data.get('title')
+            content = data.get('content')
+            category = data.get('category')
+            visible = data.get('visible', True)
+            if not title or not content:
+                return jsonify({'error': 'Title and content are required'}), 400
+            with database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO news (title, content, category, visible, date)
+                    VALUES (%s, %s, %s, %s, NOW())
+                """, (title, content, category, visible))
+                conn.commit()
+            return jsonify({'success': True, 'message': 'News article added'})
+        except Exception as e:
+            api_logger.error(f"Error adding news: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/news/<int:news_id>', methods=['PUT'])
+    @admin_required
+    def update_news(news_id):
+        """Update a news article (admin only)"""
+        try:
+            data = request.get_json()
+            title = data.get('title')
+            content = data.get('content')
+            category = data.get('category')
+            visible = data.get('visible', True)
+            with database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE news SET title=%s, content=%s, category=%s, visible=%s WHERE id=%s
+                """, (title, content, category, visible, news_id))
+                if cursor.rowcount == 0:
+                    return jsonify({'error': 'News article not found'}), 404
+                conn.commit()
+            return jsonify({'success': True, 'message': 'News article updated'})
+        except Exception as e:
+            api_logger.error(f"Error updating news: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/news/<int:news_id>', methods=['DELETE'])
+    @admin_required
+    def delete_news(news_id):
+        """Delete a news article (admin only)"""
+        try:
+            with database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "DELETE FROM news WHERE id=%s",
+                    (news_id,)
+                )
+                if cursor.rowcount == 0:
+                    return jsonify({
+                        'error': 'News article not found'
+                    }), 404
+                conn.commit()
+            return jsonify({
+                'success': True,
+                'message': 'News article deleted'
+            })
+        except Exception as e:
+            api_logger.error(f"Error deleting news: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/llm-models', methods=['POST'])
+    @admin_required
+    def add_llm():
+        """Add a new LLM model (admin only)"""
+        try:
+            data = request.get_json()
+            name = data.get('name')
+            provider = data.get('provider')
+            status = data.get('status', 'inactive')
+            if not name or not provider:
+                return jsonify({'error': 'Name and provider are required'}), 400
+            with database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO llm_models (name, provider, status, created_at)
+                    VALUES (%s, %s, %s, NOW())
+                """, (name, provider, status))
+                conn.commit()
+            return jsonify({'success': True, 'message': 'LLM model added'})
+        except Exception as e:
+            api_logger.error(f"Error adding LLM: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/llm-models/<int:model_id>', methods=['PUT'])
+    @admin_required
+    def update_llm(model_id):
+        """Update an LLM model (admin only)"""
+        try:
+            data = request.get_json()
+            name = data.get('name')
+            provider = data.get('provider')
+            status = data.get('status')
+            with database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE llm_models SET name=%s, provider=%s, status=%s WHERE id=%s
+                """, (name, provider, status, model_id))
+                if cursor.rowcount == 0:
+                    return jsonify({'error': 'LLM model not found'}), 404
+                conn.commit()
+            return jsonify({'success': True, 'message': 'LLM model updated'})
+        except Exception as e:
+            api_logger.error(f"Error updating LLM: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/llm-models/<int:model_id>', methods=['DELETE'])
+    @admin_required
+    def delete_llm(model_id):
+        """Delete an LLM model (admin only)"""
+        try:
+            with database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM llm_models WHERE id=%s", (model_id,))
+                if cursor.rowcount == 0:
+                    return jsonify({'error': 'LLM model not found'}), 404
+                conn.commit()
+            return jsonify({'success': True, 'message': 'LLM model deleted'})
+        except Exception as e:
+            api_logger.error(f"Error deleting LLM: {str(e)}")
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/red-flags', methods=['GET'])
