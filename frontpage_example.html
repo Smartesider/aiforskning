@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyForskning - AI Ethics Research</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .rss-feed-section {
+            background-color: #f8f9fa;
+            padding: 60px 0;
+        }
+        .news-item {
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            border-radius: 0 8px 8px 0;
+        }
+        .research-update {
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            border-radius: 0 8px 8px 0;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-cpu me-2"></i>SkyForskning
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">Om oss</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#research">Forskning</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#news">Nyheter</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://skyforskning.substack.com" target="_blank">Substack</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Admin</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h1 class="display-4 fw-bold mb-4">AI Ethics Research & Testing</h1>
+                    <p class="lead mb-4">
+                        Avansert testing og overvåking av etiske beslutningsprosesser på tvers av 
+                        forskjellige AI-modeller over tid.
+                    </p>
+                    <div class="row mt-5">
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <h3 class="text-primary" id="total-models">62</h3>
+                                <p class="mb-0">AI Modeller</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <h3 class="text-success" id="tests-today">0</h3>
+                                <p class="mb-0">Tester i dag</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <h3 class="text-info" id="system-status">Operativ</h3>
+                                <p class="mb-0">System Status</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5" id="about">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h2 class="mb-4">Omfattende AI Etikk Testing</h2>
+                    <p class="lead">
+                        Vårt rammeverk tester 62 AI-modeller fra 14 leverandører for å identifisere 
+                        og overvåke skjevheter i etiske beslutningsprosesser.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Sanntids bias-deteksjon</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Multi-kategori analyse</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Historisk trendsporing</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Omfattende rapportering</li>
+                    </ul>
+                </div>
+                <div class="col-lg-6">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="feature-card card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-shield-check display-4 text-primary mb-3"></i>
+                                    <h5>Bias Deteksjon</h5>
+                                    <p class="card-text">Avanserte algoritmer for å identifisere skjevheter</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="feature-card card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up display-4 text-success mb-3"></i>
+                                    <h5>Trendanalyse</h5>
+                                    <p class="card-text">Spor endringer i AI-atferd over tid</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- News and Research Updates Section -->
+    <section class="rss-feed-section" id="news">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h2 class="mb-4">
+                        <i class="bi bi-newspaper me-2"></i>Lokale Nyheter
+                    </h2>
+                    <div id="local-news-container">
+                        <!-- Local news will be loaded here -->
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Laster...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h2 class="mb-4">
+                        <i class="bi bi-rss me-2"></i>Forskningsoppdateringer
+                        <a href="https://skyforskning.substack.com" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="bi bi-box-arrow-up-right"></i> Substack
+                        </a>
+                    </h2>
+                    <div id="research-updates-container">
+                        <!-- Research updates from RSS will be loaded here -->
+                        <div class="text-center">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Laster...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>SkyForskning</h5>
+                    <p>AI Ethics Research & Testing Framework</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; 2025 SkyForskning. Alle rettigheter reservert.</p>
+                    <p>
+                        <a href="https://skyforskning.substack.com" class="text-white-50 me-3" target="_blank">
+                            <i class="bi bi-rss"></i> Substack
+                        </a>
+                        <a href="/admin" class="text-white-50">
+                            <i class="bi bi-gear"></i> Admin
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'https://skyforskning.no/api/v1';
+        
+        // Load frontpage data
+        async function loadFrontpageData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/frontpage-data`);
+                const data = await response.json();
+                
+                // Update system stats
+                if (data.system_status) {
+                    document.getElementById('total-models').textContent = data.system_status.total_models || 62;
+                    document.getElementById('tests-today').textContent = data.system_status.tests_today || 0;
+                    document.getElementById('system-status').textContent = 
+                        data.system_status.status === 'operational' ? 'Operativ' : 'Vedlikehold';
+                }
+                
+                // Load local news
+                loadLocalNews(data.local_news || []);
+                
+                // Load research updates from RSS
+                loadResearchUpdates(data.research_updates || {});
+                
+            } catch (error) {
+                console.error('Error loading frontpage data:', error);
+                showFallbackContent();
+            }
+        }
+        
+        function loadLocalNews(newsItems) {
+            const container = document.getElementById('local-news-container');
+            
+            if (newsItems.length === 0) {
+                container.innerHTML = '<p class="text-muted">Ingen lokale nyheter tilgjengelig.</p>';
+                return;
+            }
+            
+            const newsHtml = newsItems.map(item => `
+                <div class="news-item">
+                    <h5 class="mb-2">${item.title}</h5>
+                    <p class="mb-2">${item.content}</p>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>
+                        ${new Date(item.date).toLocaleDateString('no-NO')}
+                        <span class="badge bg-primary ms-2">${item.category}</span>
+                    </small>
+                </div>
+            `).join('');
+            
+            container.innerHTML = newsHtml;
+        }
+        
+        function loadResearchUpdates(researchData) {
+            const container = document.getElementById('research-updates-container');
+            const items = researchData.items || [];
+            
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <p class="text-muted">
+                        Ingen forskningsoppdateringer tilgjengelig. 
+                        <a href="https://skyforskning.substack.com" target="_blank">
+                            Besøk vår Substack
+                        </a> for de nyeste oppdateringene.
+                    </p>
+                `;
+                return;
+            }
+            
+            const updatesHtml = items.map(item => `
+                <div class="research-update">
+                    <h5 class="mb-2">
+                        <a href="${item.link || '#'}" target="_blank" class="text-decoration-none">
+                            ${item.title}
+                            <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                        </a>
+                    </h5>
+                    <p class="mb-2">${item.content}</p>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>
+                        ${new Date(item.date).toLocaleDateString('no-NO')}
+                        <span class="badge bg-success ms-2">${item.category}</span>
+                    </small>
+                </div>
+            `).join('');
+            
+            container.innerHTML = updatesHtml;
+        }
+        
+        function showFallbackContent() {
+            document.getElementById('local-news-container').innerHTML = `
+                <div class="news-item">
+                    <h5 class="mb-2">AI Ethics Testing Framework</h5>
+                    <p class="mb-2">Avansert testing av bias på tvers av 62 AI-modeller fra 14 leverandører.</p>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>
+                        ${new Date().toLocaleDateString('no-NO')}
+                        <span class="badge bg-primary ms-2">Rammeverk</span>
+                    </small>
+                </div>
+            `;
+            
+            document.getElementById('research-updates-container').innerHTML = `
+                <div class="research-update">
+                    <h5 class="mb-2">
+                        <a href="https://skyforskning.substack.com" target="_blank" class="text-decoration-none">
+                            Forskningsoppdateringer tilgjengelig
+                            <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                        </a>
+                    </h5>
+                    <p class="mb-2">Besøk vår Substack for de nyeste AI-etikk forskningsoppdateringene.</p>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>
+                        ${new Date().toLocaleDateString('no-NO')}
+                        <span class="badge bg-success ms-2">Forskning</span>
+                    </small>
+                </div>
+            `;
+        }
+        
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadFrontpageData);
+        
+        // Refresh data every 5 minutes
+        setInterval(loadFrontpageData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

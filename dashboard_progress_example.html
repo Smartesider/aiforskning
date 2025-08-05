@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Testing Progress Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .progress-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .status-badge {
+            font-size: 1.1em;
+            padding: 8px 15px;
+            border-radius: 25px;
+        }
+        
+        .status-running {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-stalled {
+            background-color: #ffc107;
+            animation: flash 1s infinite;
+        }
+        
+        .status-completed {
+            background-color: #17a2b8;
+        }
+        
+        .status-idle {
+            background-color: #6c757d;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes flash {
+            0% { background-color: #ffc107; }
+            50% { background-color: #fd7e14; }
+            100% { background-color: #ffc107; }
+        }
+        
+        .log-entry {
+            border-left: 4px solid #dee2e6;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .log-entry.info { border-left-color: #17a2b8; }
+        .log-entry.success { border-left-color: #28a745; }
+        .log-entry.error { border-left-color: #dc3545; }
+        .log-entry.warning { border-left-color: #ffc107; }
+        .log-entry.progress { border-left-color: #6f42c1; background-color: #f3e5f5; }
+        
+        .auto-refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .counts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .count-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .count-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .count-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .current-activity {
+            background: linear-gradient(45deg, #e3f2fd, #f3e5f5);
+            border: 1px solid #e1bee7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .activity-text {
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .question-preview {
+            font-style: italic;
+            color: #6c757d;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <!-- Auto-refresh indicator -->
+        <div class="auto-refresh-indicator">
+            <span class="badge bg-secondary" id="refreshIndicator">
+                <i class="bi bi-arrow-clockwise"></i> Auto-refresh: 30s
+            </span>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h1><i class="bi bi-cpu"></i> AI Testing Progress Dashboard</h1>
+                <p class="text-muted">Real-time monitoring of comprehensive AI bias testing</p>
+            </div>
+        </div>
+
+        <!-- Main Progress Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="progress-container" id="progressContainer">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3><i class="bi bi-activity"></i> Testing Status</h3>
+                        <span class="status-badge status-idle" id="statusBadge">💤 Idle</span>
+                    </div>
+                    
+                    <div id="currentActivity" class="current-activity" style="display: none;">
+                        <div class="activity-text" id="activityText">
+                            🔄 Now asking GPT-4 about ethical considerations...
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">Progress:</small>
+                                <div class="progress mt-1">
+                                    <div class="progress-bar bg-success" id="modelProgress" style="width: 45%"></div>
+                                </div>
+                                <small id="modelProgressText">Model 3 of 8</small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Questions:</small>
+                                <div class="progress mt-1">
+                                    <div class="progress-bar bg-info" id="questionProgress" style="width: 60%"></div>
+                                </div>
+                                <small id="questionProgressText">Question 3 of 5</small>
+                            </div>
+                        </div>
+                        <div class="question-preview" id="questionPreview">
+                            "What are your thoughts on maintaining fairness and avoiding bias in AI systems when dealing with sensitive topics?"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Counts -->
+        <div class="row">
+            <div class="col-12">
+                <div class="counts-grid">
+                    <div class="count-card">
+                        <div class="count-number text-success" id="finishedAIs">12</div>
+                        <div class="count-label">Finished AIs</div>
+                    </div>
+                    <div class="count-card">
+                        <div class="count-number text-danger" id="failedAIs">2</div>
+                        <div class="count-label">Failed AIs</div>
+                    </div>
+                    <div class="count-card">
+                        <div class="count-number text-primary" id="remainingAIs">48</div>
+                        <div class="count-label">Remaining AIs</div>
+                    </div>
+                    <div class="count-card">
+                        <div class="count-number text-info" id="totalQuestions">315</div>
+                        <div class="count-label">Total Questions Asked</div>
+                    </div>
+                    <div class="count-card">
+                        <div class="count-number text-warning" id="remainingQuestions">240</div>
+                        <div class="count-label">Questions Remaining</div>
+                    </div>
+                    <div class="count-card">
+                        <div class="count-number text-secondary" id="estimatedTime">45 min</div>
+                        <div class="count-label">Estimated Completion</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-gear"></i> Testing Controls</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-success" id="startTestBtn" onclick="startTesting()">
+                            <i class="bi bi-play-fill"></i> Start Comprehensive Test
+                        </button>
+                        <button class="btn btn-danger" id="stopTestBtn" onclick="stopTesting()" style="display: none;">
+                            <i class="bi bi-stop-fill"></i> Stop Testing
+                        </button>
+                        <button class="btn btn-secondary" onclick="refreshProgress()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh Now
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="viewLogs()">
+                            <i class="bi bi-file-text"></i> View Detailed Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5><i class="bi bi-journal-text"></i> Recent Activity Logs</h5>
+                        <span class="badge bg-info" id="logCount">0 entries</span>
+                    </div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <div id="logsContainer">
+                            <div class="text-center text-muted">
+                                <i class="bi bi-clock"></i> No activity logged yet
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let autoRefreshInterval;
+        let refreshCountdown = 30;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProgress();
+            loadLogs();
+            startAutoRefresh();
+        });
+
+        async function loadProgress() {
+            try {
+                const response = await fetch('/api/v1/testing-progress');
+                const data = await response.json();
+                updateProgressDisplay(data);
+            } catch (error) {
+                console.error('Error loading progress:', error);
+                showError('Failed to load progress data');
+            }
+        }
+
+        function updateProgressDisplay(data) {
+            const statusBadge = document.getElementById('statusBadge');
+            const activityDiv = document.getElementById('currentActivity');
+            const activityText = document.getElementById('activityText');
+            const startBtn = document.getElementById('startTestBtn');
+            const stopBtn = document.getElementById('stopTestBtn');
+
+            // Update status badge
+            statusBadge.className = 'status-badge';
+            if (data.active) {
+                if (data.status === 'stalled') {
+                    statusBadge.className += ' status-stalled';
+                    statusBadge.innerHTML = '⚠️ Stalled';
+                } else {
+                    statusBadge.className += ' status-running';
+                    statusBadge.innerHTML = '🔄 Running';
+                }
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                activityDiv.style.display = 'block';
+            } else {
+                if (data.status === 'completed') {
+                    statusBadge.className += ' status-completed';
+                    statusBadge.innerHTML = '✅ Completed';
+                } else {
+                    statusBadge.className += ' status-idle';
+                    statusBadge.innerHTML = '💤 Idle';
+                }
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                activityDiv.style.display = 'none';
+            }
+
+            // Update activity text
+            if (data.status_message) {
+                activityText.textContent = data.status_message;
+            }
+
+            // Update progress bars
+            if (data.current_progress) {
+                const modelPercent = (data.current_progress.model_index / data.current_progress.total_models) * 100;
+                const questionPercent = (data.current_progress.question_index / data.current_progress.total_questions) * 100;
+                
+                document.getElementById('modelProgress').style.width = modelPercent + '%';
+                document.getElementById('questionProgress').style.width = questionPercent + '%';
+                document.getElementById('modelProgressText').textContent = 
+                    `Model ${data.current_progress.model_index} of ${data.current_progress.total_models}`;
+                document.getElementById('questionProgressText').textContent = 
+                    `${data.question_progress}`;
+            }
+
+            // Update question preview
+            if (data.current_progress && data.current_progress.question) {
+                document.getElementById('questionPreview').textContent = 
+                    `"${data.current_progress.question.question.substring(0, 100)}..."`;
+            }
+
+            // Update summary counts
+            if (data.summary_counts) {
+                document.getElementById('finishedAIs').textContent = data.summary_counts.finished_models;
+                document.getElementById('failedAIs').textContent = data.summary_counts.failed_models;
+                document.getElementById('remainingAIs').textContent = data.summary_counts.remaining_models;
+                document.getElementById('totalQuestions').textContent = data.summary_counts.total_questions_asked;
+                document.getElementById('remainingQuestions').textContent = data.summary_counts.total_questions_remaining;
+            }
+
+            // Update estimated completion
+            if (data.estimated_completion) {
+                const estimated = new Date(data.estimated_completion);
+                const now = new Date();
+                const diffMinutes = Math.round((estimated - now) / (1000 * 60));
+                document.getElementById('estimatedTime').textContent = diffMinutes > 0 ? `${diffMinutes} min` : 'Soon';
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/v1/logs?limit=50');
+                const data = await response.json();
+                updateLogsDisplay(data.logs);
+                document.getElementById('logCount').textContent = `${data.total} entries`;
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                showError('Failed to load logs');
+            }
+        }
+
+        function updateLogsDisplay(logs) {
+            const container = document.getElementById('logsContainer');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted"><i class="bi bi-clock"></i> No activity logged yet</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${log.level}`;
+                
+                const timestamp = new Date(log.timestamp).toLocaleTimeString();
+                logEntry.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">${timestamp}</span>
+                        <span class="badge bg-${getLevelColor(log.level)}">${log.level.toUpperCase()}</span>
+                    </div>
+                    <div class="mt-1">${log.message}</div>
+                `;
+                container.appendChild(logEntry);
+            });
+        }
+
+        function getLevelColor(level) {
+            switch(level) {
+                case 'error': return 'danger';
+                case 'warning': return 'warning';
+                case 'success': return 'success';
+                case 'progress': return 'primary';
+                default: return 'secondary';
+            }
+        }
+
+        async function startTesting() {
+            try {
+                const response = await fetch('/api/v1/llm/comprehensive-test', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    showError(result.message);
+                } else {
+                    showSuccess('Testing started successfully!');
+                    setTimeout(loadProgress, 1000); // Refresh after 1 second
+                }
+            } catch (error) {
+                console.error('Error starting test:', error);
+                showError('Failed to start testing');
+            }
+        }
+
+        async function stopTesting() {
+            try {
+                const response = await fetch('/api/v1/testing-progress/stop', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Testing stopped successfully!');
+                    loadProgress();
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                console.error('Error stopping test:', error);
+                showError('Failed to stop testing');
+            }
+        }
+
+        function refreshProgress() {
+            loadProgress();
+            loadLogs();
+            showSuccess('Data refreshed!');
+        }
+
+        function viewLogs() {
+            // Open logs in new window or navigate to logs page
+            window.open('/logs', '_blank');
+        }
+
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                refreshCountdown--;
+                document.getElementById('refreshIndicator').innerHTML = 
+                    `<i class="bi bi-arrow-clockwise"></i> Auto-refresh: ${refreshCountdown}s`;
+                
+                if (refreshCountdown <= 0) {
+                    loadProgress();
+                    loadLogs();
+                    refreshCountdown = 30;
+                }
+            }, 1000);
+        }
+
+        function showSuccess(message) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification bg-success text-white p-3 rounded position-fixed';
+            toast.style.cssText = 'top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function showError(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification bg-danger text-white p-3 rounded position-fixed';
+            toast.style.cssText = 'top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        // Handle page visibility change to pause/resume auto-refresh
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearInterval(autoRefreshInterval);
+            } else {
+                startAutoRefresh();
+                loadProgress(); // Immediate refresh when returning to page
+            }
+        });
+    </script>
+</body>
+</html>
